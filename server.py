@@ -14,6 +14,8 @@ from sqlalchemy.sql import func
 import sqlalchemy
 from flask_sqlalchemy import SQLAlchemy
 
+import pytimeparse.timeparse as timeparse
+
 app = flask.Flask("Icinga Report In Gateway")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.sqlite'
 app.config['JSON_CONFIG_FILE'] = 'services.json'
@@ -69,6 +71,18 @@ def additionalDates():
         if not status:
             response = flask.Response("", 200, json=buildReponseDict(status, service=service))
         else:
+            if status.status == "OK":
+                timeParsed = datetime.datetime.from_timestamp(status.timestamp)
+                delta = datetime.datetime.now() - timeParsed
+                timeout = timeparse.timeparse(serviceObj.timeout)
+                if not status.timestamp == 0 and timeout < delta:
+                    status.info_text = "Service {} overdue since {}".format(service, delta.hours) 
+                    if timeout/delta > 0.9 or (delta-timeout).hours < 12:
+                        status.status = "WARNING"
+                    else:
+                        status.status = "CRITICAL"
+
+
             response = flask.Response("", 200, json=buildReponseDict(status))
 
         # finalize and return response #
