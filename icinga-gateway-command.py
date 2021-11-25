@@ -3,6 +3,7 @@
 import sys
 import argparse
 import requests
+import datetime
 
 STATUS_OK       = 0
 STATUS_WARNING  = 1
@@ -20,8 +21,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    urlBase = "{proto}://{host}:{port}/?service={service}".
-    url     = urlBase.format(proto=args.protocol, host=args.host, port=args.port)
+    urlBase = "{proto}://{host}:{port}/?service={service}"
+    url     = urlBase.format(proto=args.protocol, host=args.host,
+                                port=args.port, service=args.service)
 
     try:
         
@@ -33,22 +35,23 @@ if __name__ == "__main__":
 
         # validate response content #
         jsonDict = response.json()
-        if not all([s in jsonDict for s in ["service", "status", "timestamp", "info"]):
+        if not all([s in jsonDict for s in ["service", "status", "timestamp", "info"]]):
             print("Gateway return a bad response: {}".format(jsonDict))
             sys.exit(STATUS_UNKOWN)
 
-        if not service == jsonDict["service"]:
-            print("Gateway returned wrong bad name ({} for {})".format(jsonDict["service"], service)
+        if not args.service == jsonDict["service"]:
+            retService = jsonDict["service"]
+            print("Gateway returned wrong bad name ({} for {})".format(retService, args.service))
 
         # handle content #
-        parsedTime = datetime.datetime.from_timestamp(int(jsonDict["timestamp"]))
+        parsedTime = datetime.datetime.fromtimestamp(int(jsonDict["timestamp"]))
         timeString = parsedTime.isoformat()
        
         baseInfo = "{service}: {status} - {info} ({time})"
         status   = jsonDict["status"]
         info     = jsonDict["info"]
 
-        print(baseInfo.format(service=service, status=status, info=info, timestamp=timeString)
+        print(baseInfo.format(service=args.service, status=status, info=info, time=timeString))
         if status == "OK":
             sys.exit(STATUS_OK)
         elif status == "WARNING":
@@ -59,6 +62,6 @@ if __name__ == "__main__":
             sys.exit(STATUS_UNKOWN)
 
     except requests.exceptions.HTTPError as e:
-        print("Gateway unavailable")
+        print("Gateway unavailable: {}".format(e))
 
     sys.exit(STATUS_UNKOWN)

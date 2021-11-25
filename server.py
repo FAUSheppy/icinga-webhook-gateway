@@ -14,20 +14,18 @@ from sqlalchemy.sql import func
 import sqlalchemy
 from flask_sqlalchemy import SQLAlchemy
 
-import pytimeparse.timeparse as timeparse
-
 app = flask.Flask("Icinga Report In Gateway")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.sqlite'
 app.config['JSON_CONFIG_FILE'] = 'services.json'
 db = SQLAlchemy(app)
 
-class Service(db.base):
+class Service(db.Model):
     __tablename__ = "services"
     service = Column(String, primary_key=True)
     token   = Column(String)
     timeout = Column(Integer)
 
-class Status(db.base):
+class Status(db.Model):
     __tablename__ = "states"
     service     = Column(String, primary_key=True)
     timestamp   = Column(Integer)
@@ -47,12 +45,12 @@ def buildReponseDict(status, service=None):
                  "info"      : status.info_text }
 
 @app.route('/alive')
-def additionalDates():
+def alive():
     # simple location for icinga alive checks via HTTP #
     return ("", 204)
 
 @app.route('/', methods=["GET", "POST"])
-def additionalDates():
+def default():
     if flask.request.method == "GET":
 
         # check for arguments #
@@ -69,25 +67,23 @@ def additionalDates():
         response = None
         status = db.session.query(Status).filter(Status.service == serviceObj.service).first()
         if not status:
-            response = flask.Response("", 200, json=buildReponseDict(status, service=service))
+            return flask.jsonify(buildReponseDict(status))
         else:
+
+            # if status is ok check for timeout constrainsts, otherwise return last state #
             if status.status == "OK":
-                timeParsed = datetime.datetime.from_timestamp(status.timestamp)
-                delta = datetime.datetime.now() - timeParsed
-                timeout = timeparse.timeparse(serviceObj.timeout)
+                timeParsed   = datetime.datetime.fromtimestamp(status.timestamp)
+                totalSeconds = (datetime.datetime.now() - timeParsed).total_seconds()
+                delta = datetime.timedelta(seconds=int(totalSeconds))
+                timeout = datetime.timedelta(seconds=serviceObj.timeout)
                 if not status.timestamp == 0 and timeout < delta:
-                    status.info_text = "Service {} overdue since {}".format(service, delta.hours) 
-                    if timeout/delta > 0.9 or (delta-timeout).hours < 12:
+                    status.info_text = "Service {} overdue since {}".format(service, str(delta)) 
+                    if timeout/delta > 0.9 or (delta - timeout) < datetime.timedelta(hours=12):
                         status.status = "WARNING"
                     else:
                         status.status = "CRITICAL"
 
-
-            response = flask.Response("", 200, json=buildReponseDict(status))
-
-        # finalize and return response #
-        response.add_header("Content-Type: application/json")
-        return response
+            return flask.jsonify(buildReponseDict(status))
 
     elif flask.request.method == "POST":
 
@@ -100,7 +96,7 @@ def additionalDates():
 
         # verify token & service in config #
         verifiedServiceObj = db.session.query(Service).filter(
-                                Service.service == service and_ Service.token == token).first()
+                                and_(Service.service == service, Service.token == token)).first()
         
         if not verifiedServiceObj:
             return ("Bad service name or token", 401)
@@ -117,10 +113,10 @@ def additionalDates():
 def init():
     db.create_all()
     with open(app.config["JSON_CONFIG_FILE"]) as f:
-        config = json.read(f)
+        config = json.load(f)
         for key in config:
-            timeout = timeparse.timeparse(config["timeout"])
-            db.session.merge(Service(service=key, token=config["token"], timeout=timeout))
+            timeout = timeparse.timeparse(config[key]["timeout"])
+            db.session.merge(Service(service=key, token=config[key]["token"], timeout=timeout))
         db.session.commit()
 
 if __name__ == "__main__":
