@@ -49,3 +49,12 @@ Use the [python-script]() as a command to execute, you can pass *protocol*, *hos
  	    assign where host.name == "your_host"
     }
 
+Icinga won't have a direct line to an actual host. You can define the remote hosts normally but change the alive check from *hostalive* to *http* and check the gateway availability instead. This will also prevent an error flood if the gateway ever becomes unreachable. The gateway has the */alive* for this purpose.
+
+    object Host "laptop_1"{
+        display_name = "Sheppy's Laptop"
+        address = "localhost"
+        check_command = "http"
+        groups = ["gateway-host", "linux-generic"]
+    }
+

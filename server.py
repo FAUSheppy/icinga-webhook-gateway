@@ -44,6 +44,11 @@ def buildReponseDict(status, service=None):
                  "timestamp" : status.timestamp,
                  "info"      : status.info_text }
 
+@app.route('/alive')
+def additionalDates():
+    # simple location for icinga alive checks via HTTP #
+    return ("", 204)
+
 @app.route('/', methods=["GET", "POST"])
 def additionalDates():
     if flask.request.method == "GET":
