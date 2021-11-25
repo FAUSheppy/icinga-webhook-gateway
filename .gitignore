@@ -1,3 +1,5 @@
 *.swp
 *.sqlite
 *.json
+
+__pycache__/
