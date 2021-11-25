@@ -1,0 +1,6 @@
+Flask>=2.0.1
+Flask-SQLAlchemy>=2.5.1
+SQLAlchemy>=1.4.23
+waitress>=1.4.4
+pytimeparse>=1.1.8
+requests>=2.25.1
