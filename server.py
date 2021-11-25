@@ -5,6 +5,7 @@ import json
 import argparse
 import os
 import datetime
+import pytimeparse.timeparse as timeparse
 
 from sqlalchemy import Column, Integer, String, Boolean, or_, and_
 from sqlalchemy.orm import sessionmaker
@@ -99,7 +100,8 @@ def init():
     with open(app.config["JSON_CONFIG_FILE"]) as f:
         config = json.read(f)
         for key in config:
-            db.session.merge(Service(service=key, token=config["token"], timeout=config["timeout"]))
+            timeout = timeparse.timeparse(config["timeout"])
+            db.session.merge(Service(service=key, token=config["token"], timeout=timeout))
         db.session.commit()
 
 if __name__ == "__main__":
