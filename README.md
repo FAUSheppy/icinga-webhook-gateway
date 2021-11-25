@@ -30,23 +30,23 @@ For example:
 Use the [python-script]() as a command to execute, you can pass *protocol*, *host*, *port* and *service\_name* as arguments.
 
     object CheckCommand "gateway" {
-	    command = [ "/path/to/icinga-gateway-command.py" ]
-	    arguments = {
-		    "--protocol" = "$protocol$"
+        command = [ "/path/to/icinga-gateway-command.py" ]
+        arguments = {
+            "--protocol" = "$protocol$"
             "--host"     = "$host$"
-		    "--port"     = "$port$"
+            "--port"     = "$port$"
             "--service"  = "$service_name$
-	    }
+        }
     }
 
     apply Service "service_name" {
-	    import "generic-service"
-	    check_command = "gateway"
+        import "generic-service"
+        check_command = "gateway"
         vars.protocol = "https"
         vars.host = "localhost"
         vars.port = "5000"
         vars.service = "service_name"
- 	    assign where host.name == "your_host"
+        assign where host.name == "your_host"
     }
 
 Icinga won't have a direct line to an actual host. You can define the remote hosts normally but change the alive check from *hostalive* to *http* and check the gateway availability instead. This will also prevent an error flood if the gateway ever becomes unreachable. The gateway has the */alive* for this purpose.
