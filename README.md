@@ -32,10 +32,10 @@ Use the [python-script]() as a command to execute, you can pass *protocol*, *hos
     object CheckCommand "gateway" {
 	    command = [ "/path/to/icinga-gateway-command.py" ]
 	    arguments = {
-		    "--protocol" = "$protocol$"
-            "--host"     = "$host$"
-		    "--port"     = "$port$"
-            "--service"  = "$service_name$
+			"--protocol" = "$protocol$"
+			"--host"     = "$host$"
+			"--port"     = "$port$"
+			"--service"  = "$service_name$
 	    }
     }
 
