@@ -16,12 +16,15 @@ if __name__ == "__main__":
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--protocol', default="http",      help='Protocol to use')
     parser.add_argument('--host',     default="127.0.0.1", help='Host to connect to')
-    parser.add_argument('--port',     default=5000,        help='Port to connect to')
+    parser.add_argument('--port',                          help='Port to connect to')
     parser.add_argument('--service',  required=True,       help='Service name to check for')
 
     args = parser.parse_args()
 
     urlBase = "{proto}://{host}:{port}/?service={service}"
+    if not args.port:
+        urlBase = "{proto}://{host}/?service={service}"
+
     url     = urlBase.format(proto=args.protocol, host=args.host,
                                 port=args.port, service=args.service)
 
