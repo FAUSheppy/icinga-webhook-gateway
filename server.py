@@ -28,7 +28,7 @@ class Service(db.Model):
 class Status(db.Model):
     __tablename__ = "states"
     service     = Column(String, primary_key=True)
-    timestamp   = Column(Integer)
+    timestamp   = Column(Integer, primary_key=True)
     status      = Column(String)
     info_text   = Column(String)
 
@@ -65,25 +65,42 @@ def default():
 
         # check status #
         response = None
-        status = db.session.query(Status).filter(Status.service == serviceObj.service).first()
-        if not status:
-            return flask.jsonify(buildReponseDict(status))
+        query = db.session.query(Status).filter(Status.service == serviceObj.service)
+        lastSuccess = query.filter(Status.status == "OK").order_by(
+                                    sqlalchemy.desc(Status.timestamp)).first()
+        lastFail    = query.filter(Status.status != "OK").order_by(
+                                    sqlalchemy.desc(Status.timestamp)).first()
+
+        if not lastSuccess and not lastFail:
+            return flask.jsonify(buildReponseDict(None))
+        elif not lastSuccess and lastFail:
+            return flask.jsonify(buildReponseDict(lastFail))
         else:
 
-            # if status is ok check for timeout constrainsts, otherwise return last state #
-            if status.status == "OK":
-                timeParsed   = datetime.datetime.fromtimestamp(status.timestamp)
-                totalSeconds = (datetime.datetime.now() - timeParsed).total_seconds()
-                delta = datetime.timedelta(seconds=int(totalSeconds))
-                timeout = datetime.timedelta(seconds=serviceObj.timeout)
-                if not status.timestamp == 0 and timeout < delta:
-                    status.info_text = "Service {} overdue since {}".format(service, str(delta)) 
-                    if timeout/delta > 0.9 or (delta - timeout) < datetime.timedelta(hours=12):
-                        status.status = "WARNING"
-                    else:
-                        status.status = "CRITICAL"
+            timeParsed   = datetime.datetime.fromtimestamp(lastSuccess.timestamp)
+            totalSeconds = (datetime.datetime.now() - timeParsed).total_seconds()
+            delta = datetime.timedelta(seconds=int(totalSeconds))
+            timeout = datetime.timedelta(seconds=serviceObj.timeout)
 
-            return flask.jsonify(buildReponseDict(status))
+            latestInfoIsSuccess = not lastFail or lastFail.timestamp < lastSuccess.timestamp
+
+            if not lastSuccess.timestamp == 0 and delta > timeout and latestInfoIsSuccess:
+
+                # lastes info is success but timed out #
+                lastSuccess.info_text = "Service {} overdue since {}".format(service, str(delta)) 
+                if timeout/delta > 0.9 or (delta - timeout) < datetime.timedelta(hours=12):
+                    lastSuccess.status = "WARNING"
+                else:
+                    lastSuccess.status = "CRITICAL"
+
+                return flask.jsonify(buildReponseDict(lastSuccess))
+
+            elif latestInfoIsSuccess:
+                return flask.jsonify(buildReponseDict(lastSuccess))
+            elif delta < timeout and not latestInfoIsSuccess:
+                return flask.jsonify(buildReponseDict(lastSuccess))
+            else:
+                return flask.jsonify(buildReponseDict(lastFail))
 
     elif flask.request.method == "POST":
 
@@ -94,12 +111,17 @@ def default():
         text      = flask.request.json["info"]
         timestamp = datetime.datetime.now().timestamp()
 
+        if not service:
+            return ("'service' ist empty field in json", 400)
+        elif not token:
+            return ("'token' ist empty field in json", 400)
+
         # verify token & service in config #
         verifiedServiceObj = db.session.query(Service).filter(
-                                and_(Service.service == service, Service.token == token)).first()
-        
+                                or_(Service.service == service, Service.token == token)).first()
+
         if not verifiedServiceObj:
-            return ("Bad service name or token", 401)
+            return ("Service with this token not found in DB", 401)
         else:
             status = Status(service=service, timestamp=timestamp, status=status, info_text=text)
             db.session.merge(status)
