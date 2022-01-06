@@ -23,7 +23,8 @@ For example:
 
     curl -X POST \
          -H "application/json" \
-         -d "{ "service_name" : "name", "token" : "secret_token", "status" : "OK|WARNING|CRITICAL", "info" : "additional information" } \
+         -d "{ "service_name" : "name", "token" : "secret_token", \
+               "status" : "OK|WARNING|CRITICAL", "info" : "additional information" } \
          https://server:port/
          
 Or directly in native python:
