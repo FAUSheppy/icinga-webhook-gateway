@@ -48,7 +48,8 @@ if __name__ == "__main__":
 
         if not args.service == jsonDict["service"]:
             retService = jsonDict["service"]
-            print("Gateway returned wrong bad name ({} for {})".format(retService, args.service))
+            fmtText = "Gateway returned wrong or bad service name ({} for {})"
+            print(fmtText.format(retService, args.service))
 
         # handle content #
         parsedTime = datetime.datetime.fromtimestamp(int(jsonDict["timestamp"]))
