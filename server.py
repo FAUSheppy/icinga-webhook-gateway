@@ -72,7 +72,8 @@ def default():
                                     sqlalchemy.desc(Status.timestamp)).first()
 
         if not lastSuccess and not lastFail:
-            return flask.jsonify(buildReponseDict(None))
+            # service has never reported in #
+            return flask.jsonify(buildReponseDict(None, service=service))
         elif not lastSuccess and lastFail:
             return flask.jsonify(buildReponseDict(lastFail))
         else:
