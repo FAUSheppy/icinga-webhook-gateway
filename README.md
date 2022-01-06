@@ -25,6 +25,11 @@ For example:
          -H "application/json" \
          -d "{ "service_name" : "name", "token" : "secret_token" } \
          https://server:port/
+         
+Or directly in native python:
+
+    import requests
+    requests.post("https://server:port/", json={"service_name" : "name", "token" : "secret_token" })
 
 ## Icinga (Serverside) Requests
 Use the [python-script]() as a command to execute, you can pass *protocol*, *host*, *port* and *service\_name* as arguments.
