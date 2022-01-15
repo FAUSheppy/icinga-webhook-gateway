@@ -17,14 +17,21 @@ Services are configured in *services.json* as objects like this:
     }
 
 ## Client Requests
-Client must send a *POST-request* with *Content-Type: application/json* containing the service name and secret token as fields.
+Client must send a *POST-request* with *Content-Type: application/json* containing the service name, secret token and status as fields, the *'info'* field is optional.
 
 For example:
 
     curl -X POST \
          -H "application/json" \
-         -d "{ "service_name" : "name", "token" : "secret_token" } \
+         -d "{ "service_name" : "name", "token" : "secret_token", \
+               "status" : "OK|WARNING|CRITICAL", "info" : "additional information" } \
          https://server:port/
+         
+Or directly in native python:
+
+    import requests
+    requests.post("https://server:port/", json={"service_name" : "name", "token" : "secret_token",
+                                                "status" : "OK|WARNING|CRITICAL", "info" : "additional information"  })
 
 ## Icinga (Serverside) Requests
 Use the [python-script]() as a command to execute, you can pass *protocol*, *host*, *port* and *service\_name* as arguments.

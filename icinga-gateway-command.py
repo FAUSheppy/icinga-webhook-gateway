@@ -34,6 +34,10 @@ if __name__ == "__main__":
         response = requests.get(url)
 
         # check response status #
+        if response.status_code == 404:
+            print("The gateway does not have this service configured (404)")
+            sys.exit(STATUS_UNKOWN)
+
         response.raise_for_status()
 
         # validate response content #
@@ -44,7 +48,8 @@ if __name__ == "__main__":
 
         if not args.service == jsonDict["service"]:
             retService = jsonDict["service"]
-            print("Gateway returned wrong bad name ({} for {})".format(retService, args.service))
+            fmtText = "Gateway returned wrong or bad service name ({} for {})"
+            print(fmtText.format(retService, args.service))
 
         # handle content #
         parsedTime = datetime.datetime.fromtimestamp(int(jsonDict["timestamp"]))
