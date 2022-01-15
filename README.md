@@ -1,4 +1,7 @@
 # Icinga Client Webhooks and lazy report-in checks
+
+![Async Icinga Overview](https://media.atlantishq.de/pictures/async-icinga-overview.png)
+
 ## The Problem & The Solution
 
 This gateway meant as an alternative to passive checks for services which report in irregularly, like checks on your laptop or monthly backups which may be a few days late. The client sends an HTTP request to this server, the Icinga instance queries this server with active checks. The Server stores the check-ins by the client and response with *OK*, *Warning*, *CRITICAL* to the Icinga active checks according the the last report and time since the last report.
