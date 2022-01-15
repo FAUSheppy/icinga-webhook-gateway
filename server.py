@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import func
 import sqlalchemy
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql.expression import func
 
 app = flask.Flask("Icinga Report In Gateway")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.sqlite'
@@ -43,6 +44,13 @@ def buildReponseDict(status, service=None):
                  "status"    : status.status,
                  "timestamp" : status.timestamp,
                  "info"      : status.info_text }
+
+@app.route('/overview')
+def overview():
+    baseQuery = db.session.query(Status, func.max(Status.timestamp))
+    query = baseQuery.group_by(Status.service).order_by(Status.service)
+    results = query.all()
+    return flask.render_template("overview.html", services=results, datetime=datetime.datetime)
 
 @app.route('/alive')
 def alive():
