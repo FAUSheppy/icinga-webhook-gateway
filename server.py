@@ -50,6 +50,16 @@ def overview():
     baseQuery = db.session.query(Status, func.max(Status.timestamp))
     query = baseQuery.group_by(Status.service).order_by(Status.service)
     results = query.all()
+
+    for status in results:
+        serviceObj = db.session.query(Service).filter(Service.service == status[0].service).first()
+        timeParsed = datetime.datetime.fromtimestamp(status[0].timestamp)
+        totalSeconds = (datetime.datetime.now() - timeParsed).total_seconds()
+        delta = datetime.timedelta(seconds=int(totalSeconds))
+        timeout = datetime.timedelta(seconds=serviceObj.timeout)
+        if delta > timeout:
+            status[0].status = "WARNING"
+
     return flask.render_template("overview.html", services=results, datetime=datetime.datetime)
 
 @app.route('/alive')
