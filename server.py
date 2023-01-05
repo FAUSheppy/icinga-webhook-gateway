@@ -144,7 +144,7 @@ def default():
 
         # verify token & service in config #
         verifiedServiceObj = db.session.query(Service).filter(
-                                or_(Service.service == service, Service.token == token)).first()
+                                and_(Service.service == service, Service.token == token)).first()
 
         if not verifiedServiceObj:
             return ("Service with this token not found in DB", 401)
