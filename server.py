@@ -147,7 +147,7 @@ def default():
                                 and_(Service.service == service, Service.token == token)).first()
 
         if not verifiedServiceObj:
-            return ("Service with this token not found in DB", 401)
+            return ("Service ({}) with this token ({}) not found in DB".format(service, token), 401)
         else:
             status = Status(service=service, timestamp=timestamp, status=status, info_text=text)
             db.session.merge(status)
