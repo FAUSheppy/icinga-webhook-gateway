@@ -6,6 +6,7 @@ import argparse
 import os
 import datetime
 import pytimeparse.timeparse as timeparse
+import sys
 
 from sqlalchemy import Column, Integer, String, Boolean, or_, and_
 from sqlalchemy.orm import sessionmaker
@@ -18,6 +19,7 @@ from sqlalchemy.sql.expression import func
 app = flask.Flask("Icinga Report In Gateway")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.sqlite'
 app.config['JSON_CONFIG_FILE'] = 'services.json'
+app.config['JSON_CONFIG_DIR'] = 'config'
 db = SQLAlchemy(app)
 
 class Service(db.Model):
@@ -65,6 +67,11 @@ def overview():
 @app.route('/alive')
 def alive():
     # simple location for icinga alive checks via HTTP #
+    return ("", 204)
+
+@app.route('/reload-configuration')
+def reload():
+    init()
     return ("", 204)
 
 @app.route('/', methods=["GET", "POST"])
@@ -152,13 +159,28 @@ def default():
 
 @app.before_first_request
 def init():
+    
     db.create_all()
-    with open(app.config["JSON_CONFIG_FILE"]) as f:
-        config = json.load(f)
-        for key in config:
-            timeout = timeparse.timeparse(config[key]["timeout"])
-            db.session.merge(Service(service=key, token=config[key]["token"], timeout=timeout))
+    config = {}
+
+    if os.path.isfile(app.config["JSON_CONFIG_FILE"]):
+        with open(app.config["JSON_CONFIG_FILE"]) as f:
+            config |= json.load(f)
+    elif os.path.isdir(app.config["JSON_CONFIG_DIR"]):
+        for fname in os.listdir(app.config["JSON_CONFIG_DIR"]):
+            fullpath = os.path.join(app.config["JSON_CONFIG_DIR"], fname)
+            if fname.endswith(".json"):
+                with open(fullpath) as f:
+                    config |= json.load(f)
+
+    if not config:
+        raise ValueError("No valid configuration found - need at least one service")
+
+    for key in config:
+        timeout = timeparse.timeparse(config[key]["timeout"])
+        db.session.merge(Service(service=key, token=config[key]["token"], timeout=timeout))
         db.session.commit()
+        
 
 if __name__ == "__main__":
 
