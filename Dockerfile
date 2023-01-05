@@ -8,6 +8,9 @@ RUN python3 -m pip install --upgrade pip
 WORKDIR /app
 COPY ./ .
 
+# precreate database directory for mount (will otherwise be created at before_first_request)
+RUN mkdir /app/instance/
+
 RUN python3 -m pip install --no-cache-dir -r req.txt
 
 #HEALTHCHECK --interval=5m --timeout=5s CMD /usr/bin/curl http://localhost:5000/ || exit 1
