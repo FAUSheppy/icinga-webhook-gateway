@@ -12,9 +12,11 @@
 
 			<div class="last-status">
 			{% if status_list | length > 0 %}
-			<p>{{ status_list[0].status }} submitted on {{ status_list[0].timestamp }}</i>
+			<p class="{{ status_list[0].status }}">
+				{{ status_list[0].status }} submitted on {{ status_list[0].human_date() }}
+			</p>
 			{% else %}
-			<p style="color: darkred;">No status for this service submitted</i>
+			<p style="color: darkred;">No status for this service submitted</p>
 			{% endif %}
 			</div>
 
@@ -58,11 +60,13 @@
 				<th>Info</th>
 			</thead>
 
-			<tbody>
+			<tbody class="mt-2">
 				{% for status in status_list %}
-					<td>status.human_date()<td>
-					<td>status.status</td>
-					<td>status.info</td>
+				<tr>
+                    <td>{{ status.human_date()  }}</td>
+					<td class="{{ status.status }}">{{ status.status }}</td>
+					<td>{{ status.info_text     }}</td>
+				</tr>
 				{% endfor %}
 			</tbody>
 			</table>

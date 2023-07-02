@@ -68,6 +68,10 @@ body{
     color: pink;
 }
 
+.ok{
+    color: #5aff5a;
+}
+
 .warning{
     color: orange;
 }

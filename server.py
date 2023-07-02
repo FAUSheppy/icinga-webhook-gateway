@@ -51,7 +51,7 @@ class Status(db.Model):
 
     def human_date(self):
         dt = datetime.datetime.fromtimestamp(self.timestamp)
-        return dt.strftime("%d-%m%-%y %H:%M")
+        return dt.strftime("%d. %B %Y at %H:%M")
 
 def buildReponseDict(status, service=None):
 
@@ -91,7 +91,6 @@ def overview():
             status_age         = datetime.datetime.now() - status_time_parsed
 
             # check service timeout #
-            print(service.timeout, service, service.token)
             timeout = datetime.timedelta(seconds=service.timeout)
             if status_age > timeout:
                 status.status = "WARNING"
@@ -134,10 +133,10 @@ def service_details():
     if service.owner and service.owner != user:
         return ("Services is not owned by {}".format(user))
 
-    status_list = db.session.query()
+    status_list = db.session.query(Status).filter(Status.service==service.service).all()
 
     return flask.render_template("service_info.html", service=service, flask=flask,
-                                    user=user)
+                                    user=user, status_list=status_list)
 
 
 @app.route("/entry-form", methods=["GET", "POST", "DELETE"])
