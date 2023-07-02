@@ -23,19 +23,25 @@ app.config['JSON_CONFIG_DIR'] = 'config'
 db = SQLAlchemy(app)
 
 class Service(db.Model):
+
     __tablename__ = "services"
+
     service = Column(String, primary_key=True)
     token   = Column(String)
     timeout = Column(Integer)
+    owner   = Column(String)
 
 class Status(db.Model):
+
     __tablename__ = "states"
+
     service     = Column(String, primary_key=True)
     timestamp   = Column(Integer, primary_key=True)
     status      = Column(String)
     info_text   = Column(String)
 
 def buildReponseDict(status, service=None):
+
     if not status:
         return { "service" : service,
                  "status" : "UNKOWN",
@@ -49,20 +55,35 @@ def buildReponseDict(status, service=None):
 
 @app.route('/overview')
 def overview():
-    baseQuery = db.session.query(Status, func.max(Status.timestamp))
-    query = baseQuery.group_by(Status.service).order_by(Status.service)
-    results = query.all()
 
-    for status in results:
-        serviceObj = db.session.query(Service).filter(Service.service == status[0].service).first()
-        timeParsed = datetime.datetime.fromtimestamp(status[0].timestamp)
-        totalSeconds = (datetime.datetime.now() - timeParsed).total_seconds()
-        delta = datetime.timedelta(seconds=int(totalSeconds))
-        timeout = datetime.timedelta(seconds=serviceObj.timeout)
-        if delta > timeout:
-            status[0].status = "WARNING"
+    # query all services #
+    services = db.session.query(Service).all()
 
-    return flask.render_template("overview.html", services=results, datetime=datetime.datetime)
+    status_unique_results = []
+
+    for service in services:
+
+        # query latest status for service #
+        status_query = db.session.query(Status)
+        status_filter = status_query.filter(Status.service == service.service)
+        status = status_filter.order_by(sqlalchemy.desc(Status.timestamp)).first()
+
+        # parse time #
+        if not status:
+            status = Status(service=service.service, timestamp=0, status="UNKOWN")
+        else:
+            status_time_parsed = datetime.datetime.fromtimestamp(status.timestamp)
+            status_age_seconds = datetime.datetime.now() - time_parsed
+
+            # check service timeout #
+            timeout = datetime.timedelta(seconds=service.timeout)
+            if delta > timeout:
+                status.status = "WARNING"
+
+        status_unique_results.append(status)
+
+    return flask.render_template("overview.html", status_list=status_unique_results,
+                                    datetime=datetime.datetime)
 
 @app.route('/alive')
 def alive():
@@ -197,4 +218,4 @@ if __name__ == "__main__":
     with app.app_context():
         create_app()
 
-    app.run(host=args.interface, port=args.port)
+    app.run(host=args.interface, port=args.port, debug=True)

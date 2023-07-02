@@ -26,20 +26,24 @@
     <body>
         <div class="container">
             <div class="row">
-                {% for service in services %}
+                {% for status in status_list %}
                     <div class="col-md-5 m-3 p-2 border rounded"
-                        {% if service[0].status == "OK"  %}
+                        {% if status.status == "OK"  %}
                             style="background-color: lightgreen;"
-                        {% elif service[0].status == "WARNING"  %}
+                        {% elif status.status == "WARNING"  %}
                             style="background-color: orange;"
-                        {% elif service[0].status == "CRITICAL"  %}
+                        {% elif status.status == "CRITICAL"  %}
                             style="background-color: #ff00005c;"
                         {% else %}
                             style="background-color: magenta;"
                         {% endif %}
                     >
-                    <p class="w-100 font-weight-bold">{{ service[0].service }}</p>
-                    {{ datetime.fromtimestamp(service[0].timestamp).strftime("%H:%M %d.%m.%y") }}
+                    <p class="w-100 font-weight-bold">{{ status.service }}</p>
+                    {% if status.timestamp == 0 %}
+                    Service never reported in
+                    {% else %}
+                    {{ datetime.fromtimestamp(status.timestamp).strftime("%H:%M %d.%m.%y") }}
+                    {% endif %}
                     </div>
                 {% endfor %}
             </div>
