@@ -1,0 +1,61 @@
+{% include "head.html" %}
+<html>
+    <body>
+        {% include "navbar.html" %}
+        <div class="container">
+            <h2 class="service-name">Service: {{ service.service }}</h2>
+            <div class="service-timeout">Timeout: {{ service.timeout }}d</div>
+            <div class="service-token">Secret Token: {{ service.token }}</div>
+
+			<div class="last-status">
+			{% if status_list | length > 0 %}
+			<p>{{ status_list[0].status }} submitted on {{ status_list[0].timestamp }}</i>
+			{% else %}
+			<p style="color: darkred;">No status for this service submitted</i>
+			{% endif %}
+			</div>
+
+            <h5 class="my-4">Curl</h5>
+            <div class="ml-3 example">
+                curl -X POST \ <br>
+                <div class="example-indent">
+                    -H "application/json" \ <br>
+                    -d '{ "service_name" : "{{ service.service }}",
+                        "token" : "{{ service.token }}", \<br>
+                    "status" : "OK", "info" : "Free Text Information here" }' \<br>
+                    {{ flask.request.url_root }}
+                </div>
+            </div>
+
+            <h5 class="my-4">Python</h5>
+            <div class="ml-3 example">
+                import requests
+                requests.post("{{ flask.request.url_root }}",<br>
+                <div class="example-indent-double">
+                json= { "service_name" : "{{ service.service }}", <br>
+                    <div class="example-indent-double">
+                    "token" : "{{ service.token }}", <br>
+                                "status" : "OK", </br>
+                                "info" : "additional information"  })
+                    </div>
+                </div>
+            </div>
+
+			<table class="mb-4 mt-5 status-table">
+			<thead>
+				<th>Date</th>
+				<th>Status</th>
+				<th>Info</th>
+			</thead>
+
+			<tbody>
+				{% for status in status_list %}
+					<td>status.human_date()<td>
+					<td>status.status</td>
+					<td>status.info</td>
+				{% endfor %}
+			</tbody>
+			</table>
+        </div>
+    </body>
+</html>

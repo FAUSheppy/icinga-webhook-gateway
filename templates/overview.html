@@ -1,33 +1,12 @@
-<head>
-    <link rel="stylesheet" type="text/css" href="/static/site.css">
-    <link rel="shortcut icon" href="/static/defaultFavicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    
-    <!-- needed for @media-css mofiers -->
-    <meta content="width=device-width, initial-scale=1" name="viewport" />
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
-    
-    <!-- Bootstrap core CSS -->
-    <link href="https://cdn.atlantishq.de/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Material Design Bootstrap -->
-    <link href="https://cdn.atlantishq.de/css/mdb.min.css" rel="stylesheet">
-    
-    <script src="https://cdn.atlantishq.de/js/jquery.js"></script>
-    <script src="https://cdn.atlantishq.de/js/popper.js"></script>
-    <script src="https://cdn.atlantishq.de/js/bootstrap.js"></script>
-    <script src="https://cdn.atlantishq.de/js/mdb.min.js"></script>
-    <script src="https://cdn.atlantishq.de/js/addons/datatables.min.js" type="text/javascript">
-    </script>
-</head>
+{% include "head.html" %}
 <html>
     <body>
+        {% include "navbar.html" %}
         <div class="container">
             <div class="row">
                 {% for status in status_list %}
-                    <div class="col-md-5 m-3 p-2 border rounded"
+                <a href="/service-details?service={{ status.service}}"
+                   class="col-md-5 m-3 p-2 border rounded overview-tile"
                         {% if status.status == "OK"  %}
                             style="background-color: lightgreen;"
                         {% elif status.status == "WARNING"  %}
@@ -44,7 +23,7 @@
                     {% else %}
                     {{ datetime.fromtimestamp(status.timestamp).strftime("%H:%M %d.%m.%y") }}
                     {% endif %}
-                    </div>
+                </a>
                 {% endfor %}
             </div>
         </div>

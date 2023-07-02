@@ -1,0 +1,79 @@
+body{
+    background: radial-gradient(ellipse at center, #47918a 0%, #0b3161 100%);
+    color: aliceblue !important;
+}
+
+.navbar{
+    width: 100%;
+    background: rgba(0,0,0,0);
+    display: block;
+    box-shadow: none;
+    padding: 20px;
+}
+
+.navbar-el{
+    float: right;
+    display: inline-block;
+    background: rgba(0,0,0,0);
+    color: aliceblue;
+}
+
+.navbar-el:hover{
+    color: darkgray;
+}
+
+.overview-tile{
+    color: black;
+}
+
+.last-status{
+    margin-top: 10px;
+    box-shadow: 0px 0px 4px 3px rgba(0,0,0,0.5);
+    background: linear-gradient(to top, #cfc6b054 0%, #cfcfcfc4 100%);
+    padding: 8px;
+    width: fit-content;
+    font-family: monospace;
+    font-weight: 500;
+}
+
+.last-status p{
+    margin-bottom: 0;
+}
+
+.service-name{
+    margin: auto;
+    max-width: 1000px;
+    width: fit-content;
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+.service-timeout{
+
+}
+
+.service-token{
+
+}
+
+.example{
+    font-family: monospace;
+    font-size: 12px;
+    border-style: solid;
+    border-width: 1px;
+    padding: 10px;
+}
+
+.example-indent{
+    padding-left: 20px;
+}
+
+.example-indent-double{
+    padding-left: 50px;
+}
+
+.status-table{
+    margin: auto;
+    width: 100%;
+    text-align: center;
+}

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import time
 import flask
 import json
 import argparse
@@ -7,6 +8,12 @@ import os
 import datetime
 import pytimeparse.timeparse as timeparse
 import sys
+import secrets
+
+import flask_wtf
+from flask_wtf import FlaskForm, CSRFProtect
+from wtforms import StringField, SubmitField, BooleanField, DecimalField
+from wtforms.validators import DataRequired, Length
 
 from sqlalchemy import Column, Integer, String, Boolean, or_, and_
 from sqlalchemy.orm import sessionmaker
@@ -17,6 +24,9 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
 
 app = flask.Flask("Icinga Report In Gateway")
+CSRFProtect(app)
+
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.sqlite'
 app.config['JSON_CONFIG_FILE'] = 'services.json'
 app.config['JSON_CONFIG_DIR'] = 'config'
@@ -40,6 +50,10 @@ class Status(db.Model):
     status      = Column(String)
     info_text   = Column(String)
 
+    def human_date(self):
+        dt = datetime.datetime.fromtimestamp(self.timestamp)
+        return dt.strftime("%d-%m%-%y %H:%M")
+
 def buildReponseDict(status, service=None):
 
     if not status:
@@ -55,6 +69,8 @@ def buildReponseDict(status, service=None):
 
 @app.route('/overview')
 def overview():
+
+    user = flask.request.headers.get("X-Preferred-Username")
 
     # query all services #
     services = db.session.query(Service).all()
@@ -83,7 +99,54 @@ def overview():
         status_unique_results.append(status)
 
     return flask.render_template("overview.html", status_list=status_unique_results,
-                                    datetime=datetime.datetime)
+                                    datetime=datetime.datetime, user=user)
+
+class EntryForm(FlaskForm):
+
+    service = StringField("Service Name", validators=[DataRequired()])
+    timeout = DecimalField("Timeout in days", default=30)
+
+def create_entry(form, user):
+
+    # TODO add entry to icinga
+    token = secrets.token_urlsafe(16)
+    print(form.timeout.data)
+    service = Service(service=form.service.data, timeout=int(form.timeout.data),
+                        owner=user, token=token)
+    db.session.merge(service)
+    db.session.commit()
+
+@app.route("/service-details")
+def service_details():
+
+    user = flask.request.headers.get("X-Preferred-Username")
+    service = flask.request.args.get("service")
+
+    # query service #
+    service = db.session.query(Service).filter(Service.service==service).first()
+
+    # validate #
+    if not service:
+        return ("{} not found".format("service"), 404)
+    if service.owner and service.owner != user:
+        return ("Services is not owned by {}".format(user))
+
+    status_list = db.session.query()
+
+    return flask.render_template("service_info.html", service=service, flask=flask,
+                                    user=user)
+
+
+@app.route("/entry-form", methods=["GET", "POST"])
+def create_interface():
+
+    user = flask.request.headers.get("X-Preferred-Username")
+
+    form = EntryForm()
+    if form.validate_on_submit():
+        create_entry(form, user)
+        return flask.redirect('/service-details?service={}'.format(form.service.data))
+    return flask.render_template('add_modify_service.html', form=form)
 
 @app.route('/alive')
 def alive():
@@ -187,6 +250,8 @@ def create_app():
     
     db.create_all()
     config = {}
+
+    app.config["SECRET_KEY"] = secrets.token_urlsafe(64)
 
     if os.path.isfile(app.config["JSON_CONFIG_FILE"]):
         with open(app.config["JSON_CONFIG_FILE"]) as f:
