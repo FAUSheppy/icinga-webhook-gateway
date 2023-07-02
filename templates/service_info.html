@@ -8,8 +8,7 @@
             <a class="service-info-button mt-3" style="background-color: orange;"
                 href="/entry-form?service={{ service.service }}">Modify</a>
             <a class="service-info-button mt-3" style="background-color: red;"
-                href="#"
-                onclick="alert('Delete is not supported yet')">Delete</a>
+                href="/entry-form?service={{ service.service }}&operation=delete">Delete</a>
 
 			<div class="last-status">
 			{% if status_list | length > 0 %}
@@ -30,8 +29,8 @@
             <div class="ml-3 example">
                 curl -X POST \ <br>
                 <div class="example-indent">
-                    -H "application/json" \ <br>
-                    -d '{ "service_name" : "{{ service.service }}",
+                    -H "Content-Type: application/json" \ <br>
+                    -d '{ "service" : "{{ service.service }}",
                         "token" : "{{ service.token }}", \<br>
                     "status" : "OK", "info" : "Free Text Information here" }' \<br>
                     {{ flask.request.url_root }}

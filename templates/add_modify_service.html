@@ -25,7 +25,7 @@
             {% endif %}
             <form class="mt-4" method="POST" action="/entry-form">
 
-                {{ form.csrf_token }}
+                {{ form.service_hidden }}
                 {{ form.service.label }}
 
                 {% if is_modification %}

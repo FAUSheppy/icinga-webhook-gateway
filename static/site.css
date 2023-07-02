@@ -36,6 +36,46 @@ body{
     color: black;
 }
 
+.overview-tile-titel{
+    color: black;
+    display: inline-block;
+    width: fit-content;
+    float: left;
+    font-weight: bold;
+}
+
+.overview-tile-status{
+    color: black;
+    display: inline-block;
+    width: fit-content;
+    float: right;
+    font-family: monospace;
+}
+
+.overview-tile-info-text{
+    clear: both;
+    float: left;
+    display: inline-block;
+}
+
+.overview-tile-date{
+    clear: both;
+    float: right;
+    display: inline-block;
+}
+
+.unknown{
+    color: pink;
+}
+
+.warning{
+    color: orange;
+}
+
+.error{
+    color: red;
+}
+
 .last-status{
     margin-top: 10px;
     box-shadow: 0px 0px 4px 3px rgba(0,0,0,0.5);
@@ -104,6 +144,10 @@ body{
     padding-top: 2px;
 
     color: black;
+
+    border: none;
+    outline: none;
+    cursor: pointer;
 }
 
 .box{

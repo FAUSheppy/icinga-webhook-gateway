@@ -17,12 +17,28 @@
                             style="background-color: magenta;"
                         {% endif %}
                     >
-                    <p class="w-100 font-weight-bold">{{ status.service }}</p>
+                    <div class="overview-tile-titel mb-2">{{ status.service }}</div>
+                    <div class="overview-tile-status {{ status.status.lower() }}">
+                        {{ status.status }}
+                    </div>
+
+                    <div class="overview-tile-info-text">
+                        <small>
+                        {% if status.info_text %}
+                        {{ status.info_text }}
+                        {% else %}
+                        No extra info
+                        {% endif %}
+                        </small>
+                    </div>
+
+                    <small class="overview-tile-date pt-2">
                     {% if status.timestamp == 0 %}
                     Service never reported in
                     {% else %}
-                    {{ datetime.fromtimestamp(status.timestamp).strftime("%H:%M %d.%m.%y") }}
+                    {{ datetime.fromtimestamp(status.timestamp).strftime("%H:%M on %d.%b.%y") }}
                     {% endif %}
+                    </small>
                 </a>
                 {% endfor %}
             </div>

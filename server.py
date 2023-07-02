@@ -11,8 +11,8 @@ import sys
 import secrets
 
 import flask_wtf
-from flask_wtf import FlaskForm, CSRFProtect
-from wtforms import StringField, SubmitField, BooleanField, DecimalField
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField, BooleanField, DecimalField, HiddenField
 from wtforms.validators import DataRequired, Length
 
 from sqlalchemy import Column, Integer, String, Boolean, or_, and_
@@ -24,7 +24,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
 
 app = flask.Flask("Icinga Report In Gateway")
-CSRFProtect(app)
 
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.sqlite'
@@ -89,11 +88,12 @@ def overview():
             status = Status(service=service.service, timestamp=0, status="UNKOWN")
         else:
             status_time_parsed = datetime.datetime.fromtimestamp(status.timestamp)
-            status_age_seconds = datetime.datetime.now() - time_parsed
+            status_age         = datetime.datetime.now() - status_time_parsed
 
             # check service timeout #
+            print(service.timeout, service, service.token)
             timeout = datetime.timedelta(seconds=service.timeout)
-            if delta > timeout:
+            if status_age > timeout:
                 status.status = "WARNING"
 
         status_unique_results.append(status)
@@ -103,15 +103,18 @@ def overview():
 
 class EntryForm(FlaskForm):
 
-    service = StringField("Service Name", validators=[DataRequired()])
+    service = StringField("Service Name")
+    service_hidden = HiddenField("service_hidden")
     timeout = DecimalField("Timeout in days", default=30)
 
 def create_entry(form, user):
 
     # TODO add entry to icinga
     token = secrets.token_urlsafe(16)
-    print(form.timeout.data)
-    service = Service(service=form.service.data, timeout=int(form.timeout.data),
+
+    service_name = form.service.data or form.service_hidden.data
+
+    service = Service(service=service_name, timeout=int(form.timeout.data),
                         owner=user, token=token)
     db.session.merge(service)
     db.session.commit()
@@ -137,10 +140,25 @@ def service_details():
                                     user=user)
 
 
-@app.route("/entry-form", methods=["GET", "POST"])
+@app.route("/entry-form", methods=["GET", "POST", "DELETE"])
 def create_interface():
 
     user = flask.request.headers.get("X-Preferred-Username")
+
+    # check if is delete #
+    operation = flask.request.args.get("operation") 
+    if operation and operation == "delete" :
+
+        service_delete_name = flask.request.args.get("service")
+        service_del_object = db.session.query(Service).filter(Service.service==service_delete_name,
+                                                Service.owner==user).first()
+        if not service_del_object:
+            return ("Failed to delete the requested service", 404)
+
+        db.session.delete(service_del_object)
+        db.session.commit()
+
+        return flask.redirect("/overview")
 
     form = EntryForm()
    
@@ -151,14 +169,17 @@ def create_interface():
         if service:
             form.service.default = service.service
             form.timeout.default = service.timeout
+            form.service_hidden.default = service.service
             form.process()
         else:
             return ("Not a valid service to modify", 404)
-
-    if form.validate_on_submit():
+    
+    if flask.request.method == "POST":
         create_entry(form, user)
-        return flask.redirect('/service-details?service={}'.format(form.service.data))
-    return flask.render_template('add_modify_service.html', form=form,
+        service_name = form.service.data or form.service_hidden.data
+        return flask.redirect('/service-details?service={}'.format(service_name))
+    else:
+        return flask.render_template('add_modify_service.html', form=form,
                     is_modification=bool(modify_service_name))
 
 @app.route('/alive')
