@@ -4,8 +4,12 @@
         {% include "navbar.html" %}
         <div class="container">
             <h2 class="service-name">Service: {{ service.service }}</h2>
-            <div class="service-timeout">Timeout: {{ service.timeout }}d</div>
-            <div class="service-token">Secret Token: {{ service.token }}</div>
+
+            <a class="service-info-button mt-3" style="background-color: orange;"
+                    href="/entry-form">Modify</a>
+            <a class="service-info-button mt-3" style="background-color: red;"
+                href="#"
+                onclick="alert('Delete is not supported yet')">Delete</a>
 
 			<div class="last-status">
 			{% if status_list | length > 0 %}
@@ -14,6 +18,13 @@
 			<p style="color: darkred;">No status for this service submitted</i>
 			{% endif %}
 			</div>
+
+            <div class="p-4 box mt-4 mb-3" style="display: none;">
+                <div class="service-timeout">Timeout: {{ service.timeout }} days</div>
+                <div class="service-timeout">Owner: {{ service.owner }}</div>
+                <div style="display: none;"
+                     class="service-token">Secret Token: {{ service.token }}</div>
+            </div>
 
             <h5 class="my-4">Curl</h5>
             <div class="ml-3 example">

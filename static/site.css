@@ -87,3 +87,28 @@ body{
     width: 100%;
     text-align: center;
 }
+
+.service-info-button:hover{
+    color: black;
+    opacity: 0.75;
+}
+
+.service-info-button{
+    float: right;
+    font-family: monospace;
+    margin-left: 10px;
+    padding-left:  10px;
+    padding-right: 10px;
+   
+    padding-top: 2px;
+    padding-top: 2px;
+
+    color: black;
+}
+
+.box{
+    border-style: solid;
+    border-width: 1px;
+    border-color: aliceblue;
+    width: fit-content;
+}
