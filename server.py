@@ -78,6 +78,12 @@ def reload():
 def default():
     if flask.request.method == "GET":
 
+        # show overview if browser #
+        ua = flask.request.headers.get("User-Agent")
+        content_type = flask.request.headers.get("Content-Type")
+        if "Mozilla" in ua and not content_type == "application/json":
+            return flask.redirect("/overview")
+
         # check for arguments #
         service = flask.request.args.get("service")
         if not service:
