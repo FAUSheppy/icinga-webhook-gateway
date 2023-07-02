@@ -156,9 +156,7 @@ def default():
     else:
         return ("Method not implemented: {}".format(flask.request.method), 405)
 
-
-@app.before_first_request
-def init():
+def create_app():
     
     db.create_all()
     config = {}
@@ -189,4 +187,8 @@ if __name__ == "__main__":
     parser.add_argument('--port', default="5000", help='Port to run on')
 
     args = parser.parse_args()
+
+    with app.app_context():
+        create_app()
+
     app.run(host=args.interface, port=args.port)
