@@ -6,7 +6,7 @@
             <h2 class="service-name">Service: {{ service.service }}</h2>
 
             <a class="service-info-button mt-3" style="background-color: orange;"
-                    href="/entry-form">Modify</a>
+                href="/entry-form?service={{ service.service }}">Modify</a>
             <a class="service-info-button mt-3" style="background-color: red;"
                 href="#"
                 onclick="alert('Delete is not supported yet')">Delete</a>

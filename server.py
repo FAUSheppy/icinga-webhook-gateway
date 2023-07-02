@@ -143,10 +143,23 @@ def create_interface():
     user = flask.request.headers.get("X-Preferred-Username")
 
     form = EntryForm()
+   
+    # handle modification #
+    modify_service_name = flask.request.args.get("service")
+    if modify_service_name:
+        service = db.session.query(Service).filter(Service.service == modify_service_name).first()
+        if service:
+            form.service.default = service.service
+            form.timeout.default = service.timeout
+            form.process()
+        else:
+            return ("Not a valid service to modify", 404)
+
     if form.validate_on_submit():
         create_entry(form, user)
         return flask.redirect('/service-details?service={}'.format(form.service.data))
-    return flask.render_template('add_modify_service.html', form=form)
+    return flask.render_template('add_modify_service.html', form=form,
+                    is_modification=bool(modify_service_name))
 
 @app.route('/alive')
 def alive():

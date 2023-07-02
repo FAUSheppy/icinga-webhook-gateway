@@ -7,7 +7,13 @@
         }
     </style>
     <div class="container">
-        <h1 style="margin: auto; width: fit-content;" class="mt-5">Create a new Service</h1>
+        <h1 style="margin: auto; width: fit-content;" class="mt-5">
+            {% if is_modification %}
+                Modify Service
+            {% else %}
+                Create a new Service
+            {% endif %}
+        </h1>
         <div class="form-container">
             <hr style="mt-3">
             {% if form.service.errors %}
@@ -20,10 +26,22 @@
             <form class="mt-4" method="POST" action="/entry-form">
 
                 {{ form.csrf_token }}
-                {{ form.service.label }}    {{ form.service(size=20) }} </br>
+                {{ form.service.label }}
+
+                {% if is_modification %}
+                {{ form.service(size=20, disabled=True) }}
+                {% else %}
+                {{ form.service(size=20) }}
+                {% endif %}
+
+                </br>
                 {{ form.timeout.label }}    {{ form.timeout() }}        </br>
 
+                {% if is_modification %}
+                <input class="form-button mt-4" type="submit" value="Send Modification">
+                {% else %}
                 <input class="form-button mt-4" type="submit" value="Create">
+                {% endif %}
             </form>
         </div>
     </div>
