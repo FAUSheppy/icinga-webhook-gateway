@@ -1,3 +1,6 @@
 pytimeparse
 flask
 flask-sqlalchemy
+flasl-wtf
+waitress
+requests
