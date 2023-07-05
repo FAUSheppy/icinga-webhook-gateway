@@ -23,6 +23,8 @@ import sqlalchemy
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
 
+import icingatools
+
 app = flask.Flask("Icinga Report In Gateway")
 
 
@@ -115,6 +117,9 @@ def create_entry(form, user):
 
     service = Service(service=service_name, timeout=int(form.timeout.data),
                         owner=user, token=token)
+
+    icingatools.create_service(service_name, app)
+
     db.session.merge(service)
     db.session.commit()
 
@@ -151,9 +156,11 @@ def create_interface():
         service_delete_name = flask.request.args.get("service")
         service_del_object = db.session.query(Service).filter(Service.service==service_delete_name,
                                                 Service.owner==user).first()
+
         if not service_del_object:
             return ("Failed to delete the requested service", 404)
 
+        icingatools.delete_service(service_delete_name, app)
         db.session.delete(service_del_object)
         db.session.commit()
 
@@ -296,6 +303,9 @@ def create_app():
                 with open(fullpath) as f:
                     config |= json.load(f)
 
+    # create dummy host #
+    icingatools.create_master_host(app)
+
     if not config:
         print("No valid configuration found - need at least one service")
         return
@@ -320,9 +330,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     app.config["ASYNC_ICINGA_DUMMY_HOST"] = args.icinga_dummy_host
-    app.config["ICINGA_API_USER"] = args.icinga_dummy_host
-    app.config["ICINGA_API_PASS"] = args.icinga_dummy_host
-    app.config["ICINGA_API_URL"] = args.icinga_dummy_host
+    #app.config["ASYNC_ICINGA_QUERY_URL"] = args.icinga_api_url
+
+    app.config["ICINGA_API_USER"] = args.icinga_api_user
+    app.config["ICINGA_API_PASS"] = args.icinga_api_pass
+    app.config["ICINGA_API_URL"] = args.icinga_api_url
 
     with app.app_context():
         create_app()
