@@ -311,7 +311,17 @@ if __name__ == "__main__":
     parser.add_argument('--interface', default="localhost", help='Interface to run on')
     parser.add_argument('--port', default="5000", help='Port to run on')
 
+    parser.add_argument('--icinga-dummy-host', required=True)
+    parser.add_argument('--icinga-api-pass', required=True)
+    parser.add_argument('--icinga-api-user', required=True)
+    parser.add_argument('--icinga-api-url', required=True)
+
     args = parser.parse_args()
+
+    app.config["ASYNC_ICINGA_DUMMY_HOST"] = args.icinga_dummy_host
+    app.config["ICINGA_API_USER"] = args.icinga_dummy_host
+    app.config["ICINGA_API_PASS"] = args.icinga_dummy_host
+    app.config["ICINGA_API_URL"] = args.icinga_dummy_host
 
     with app.app_context():
         create_app()
