@@ -297,7 +297,8 @@ def create_app():
                     config |= json.load(f)
 
     if not config:
-        raise ValueError("No valid configuration found - need at least one service")
+        print("No valid configuration found - need at least one service")
+        return
 
     for key in config:
         timeout = timeparse.timeparse(config[key]["timeout"])
