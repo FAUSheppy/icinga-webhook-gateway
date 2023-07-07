@@ -128,7 +128,7 @@ def create_entry(form, user):
 @app.route("/service-details")
 def service_details():
 
-    user = flask.request.headers.get("X-Forwarded-Preferred-Username")
+    user = str(flask.request.headers.get("X-Forwarded-Preferred-Username"))
     service = flask.request.args.get("service")
 
     # query service #
@@ -137,7 +137,7 @@ def service_details():
     # validate #
     if not service:
         return ("{} not found".format("service"), 404)
-    if service.owner and service.owner != user:
+    if service.owner and str(service.owner) != user:
         return ("Services is not owned by {}".format(user))
 
     status_list = db.session.query(Status).filter(Status.service==service.service).all()
