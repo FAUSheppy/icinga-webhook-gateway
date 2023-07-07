@@ -313,7 +313,7 @@ def create_app():
     elif os.path.isdir(app.config["JSON_CONFIG_DIR"]):
         for fname in os.listdir(app.config["JSON_CONFIG_DIR"]):
             fullpath = os.path.join(app.config["JSON_CONFIG_DIR"], fname)
-            if fname.endswith(".json"):
+            if fname.endswith(".json") and not fname == "config.json":
                 with open(fullpath) as f:
                     config |= json.load(f)
 
