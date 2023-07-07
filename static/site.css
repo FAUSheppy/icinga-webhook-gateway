@@ -169,4 +169,10 @@ body{
     border-style: solid;
     border-color: red;
     font-size: 17px;
+    float: right;
+    max-width: 40%;
+}
+
+.clear {
+    clear: both;
 }

@@ -35,14 +35,14 @@ def create_master_host(app):
     # Create the host
     response = client.objects.create("Host", host_name, **host_config)
 
-def _build_service_name(async_service_name):
+def _build_service_name(user, async_service_name):
     
-    return "ais_{}".format(async_service_name)
+    return "{}_async_{}".format(user, async_service_name)
 
-def create_service(async_service_name, app):
+def create_service(user, async_service_name, app):
 
     client = _create_client(app)
-    name = _build_service_name(async_service_name)
+    name = _build_service_name(user, async_service_name)
     host_name = app.config["ASYNC_ICINGA_DUMMY_HOST"]
 
     service_config = {
@@ -64,11 +64,20 @@ def create_service(async_service_name, app):
     print(service_api_helper_name)
     response = client.objects.create("Service", service_api_helper_name, **service_config)
 
-def delete_service(async_service_name, app):
+def delete_service(user, async_service_name, app):
 
     client = _create_client(app)
-    name = _build_service_name(async_service_name)
+    name = _build_service_name(user, async_service_name)
     host_name = app.config["ASYNC_ICINGA_DUMMY_HOST"]
     service_api_helper_name = "{}!{}".format(host_name, name)
 
     client.objects.delete("Service", service_api_helper_name)
+
+def build_icinga_link_for_service(user, service_name, app):
+
+    name = _build_service_name(user, service_name)
+    url_fmt = "{base}/icingaweb2/dashboard/#!/icingaweb2/monitoring/service/show?host={host}&service={service}"
+    return url_fmt.format(base=app.config["ICINGA_WEB_URL"],
+                            host=app.config["ASYNC_ICINGA_DUMMY_HOST"],
+                            service=name)
+

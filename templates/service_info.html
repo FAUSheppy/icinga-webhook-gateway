@@ -3,18 +3,22 @@
     <body>
         {% include "navbar.html" %}
         <div class="container">
+            <a href="{{ icinga_link }}">Icinga Link</a>
             <h2 class="service-name">Service: {{ service.service }}</h2>
             {% if service.staticly_configured %}
-            <h4 class="static-configured-info">
-                This service is staticly configured, to permanently delete it, you have to remove
-                it from the configuration file on the server.
-            </h4>
             {% endif %}
 
+            {% if not service.staticly_configured %}
             <a class="service-info-button mt-3" style="background-color: orange;"
                 href="/entry-form?service={{ service.service }}">Modify</a>
             <a class="service-info-button mt-3" style="background-color: red;"
                 href="/entry-form?service={{ service.service }}&operation=delete">Delete</a>
+            {% else %}
+            <div class="static-configured-info">
+                This service is staticly configured, to edit or delete it, you have to modify the
+                configuration file on the server.
+            </div>
+            {% endif %}
 
 			<div class="last-status">
 			{% if status_list | length > 0 %}
@@ -26,14 +30,14 @@
 			{% endif %}
 			</div>
 
-            <div class="p-4 box mt-4 mb-3" style="display: none;">
+            <div class="clear p-4 box mt-4 mb-3" style="display: none;">
                 <div class="service-timeout">Timeout: {{ service.timeout }} days</div>
                 <div class="service-timeout">Owner: {{ service.owner }}</div>
                 <div style="display: none;"
                      class="service-token">Secret Token: {{ service.token }}</div>
             </div>
 
-            <h5 class="my-4">Curl</h5>
+            <h5 class="clear my-4">Curl</h5>
             <div class="ml-3 example">
                 curl -X POST \ <br>
                 <div class="example-indent">

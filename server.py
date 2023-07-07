@@ -120,7 +120,7 @@ def create_entry(form, user):
     service = Service(service=service_name, timeout=int(form.timeout.data),
                         owner=user, token=token)
 
-    icingatools.create_service(service_name, app)
+    icingatools.create_service(user, service_name, app)
 
     db.session.merge(service)
     db.session.commit()
@@ -142,14 +142,16 @@ def service_details():
 
     status_list = db.session.query(Status).filter(Status.service==service.service).all()
 
+    icinga_link = icingatools.build_icinga_link_for_service(user, service.service, app)
+
     return flask.render_template("service_info.html", service=service, flask=flask,
-                                    user=user, status_list=status_list)
+                                    user=user, status_list=status_list, icinga_link=icinga_link)
 
 
 @app.route("/entry-form", methods=["GET", "POST", "DELETE"])
 def create_interface():
 
-    user = str(flask.request.headers.get("X-Preferred-Username"))
+    user = str(flask.request.headers.get("X-Forwarded-Preferred-Username"))
 
     # check if is delete #
     operation = flask.request.args.get("operation") 
@@ -162,7 +164,7 @@ def create_interface():
         if not service_del_object:
             return ("Failed to delete the requested service", 404)
 
-        icingatools.delete_service(service_delete_name, app)
+        icingatools.delete_service(user, service_delete_name, app)
         db.session.delete(service_del_object)
         db.session.commit()
 
@@ -331,6 +333,7 @@ if __name__ == "__main__":
     parser.add_argument('--icinga-api-pass', required=True)
     parser.add_argument('--icinga-api-user', required=True)
     parser.add_argument('--icinga-api-url', required=True)
+    parser.add_argument('--icinga-web-url', required=True)
 
     args = parser.parse_args()
 
@@ -340,6 +343,8 @@ if __name__ == "__main__":
     app.config["ICINGA_API_USER"] = args.icinga_api_user
     app.config["ICINGA_API_PASS"] = args.icinga_api_pass
     app.config["ICINGA_API_URL"] = args.icinga_api_url
+
+    app.config["ICINGA_WEB_URL"] = args.icinga_web_url
 
     with app.app_context():
         create_app()
