@@ -123,7 +123,7 @@ def create_entry(form, user):
 @app.route("/service-details")
 def service_details():
 
-    user = flask.request.headers.get("X-Preferred-Username")
+    user = flask.request.headers.get("X-Forwarded-Preferred-Username")
     service = flask.request.args.get("service")
 
     # query service #
