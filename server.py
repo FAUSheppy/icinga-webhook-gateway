@@ -317,9 +317,6 @@ def create_app():
                 with open(fullpath) as f:
                     config |= json.load(f)
 
-    # create dummy host #
-    icingatools.create_master_host(app)
-
     if not config:
         print("No valid configuration found - need at least one service")
         return
@@ -331,6 +328,9 @@ def create_app():
                                     staticly_configured=staticly_configured, timeout=timeout,
                                     owner=config[key]["owner"]))
         db.session.commit()
+
+    # create dummy host #
+    icingatools.create_master_host(app)
         
 
 if __name__ == "__main__":
