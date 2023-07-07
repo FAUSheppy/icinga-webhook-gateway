@@ -1,7 +1,7 @@
 pytimeparse
 flask
 flask-sqlalchemy
-flasl-wtf
+flask-wtf
 waitress
 requests
 icinga2api
