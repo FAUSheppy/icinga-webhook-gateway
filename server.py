@@ -71,10 +71,10 @@ def buildReponseDict(status, service=None):
 @app.route('/overview')
 def overview():
 
-    user = flask.request.headers.get("X-Preferred-Username")
+    user = str(flask.request.headers.get("X-Forwarded-Preferred-Username"))
 
     # query all services #
-    services = db.session.query(Service).all()
+    services = db.session.query(Service).filter(Service.owner == user).all()
 
     status_unique_results = []
 
@@ -144,7 +144,7 @@ def service_details():
 @app.route("/entry-form", methods=["GET", "POST", "DELETE"])
 def create_interface():
 
-    user = flask.request.headers.get("X-Preferred-Username")
+    user = str(flask.request.headers.get("X-Preferred-Username"))
 
     # check if is delete #
     operation = flask.request.args.get("operation") 
@@ -167,7 +167,7 @@ def create_interface():
     modify_service_name = flask.request.args.get("service")
     if modify_service_name:
         service = db.session.query(Service).filter(Service.service == modify_service_name).first()
-        if service:
+        if service and service.owner == user:
             form.service.default = service.service
             form.timeout.default = service.timeout
             form.service_hidden.default = service.service
@@ -305,7 +305,8 @@ def create_app():
         timeout = timeparse.timeparse(config[key]["timeout"])
         staticly_configured = True
         db.session.merge(Service(service=key, token=config[key]["token"], 
-                                    staticly_configured=staticly_configured, timeout=timeout))
+                                    staticly_configured=staticly_configured, timeout=timeout,
+                                    owner=config[key]["owner"]))
         db.session.commit()
         
 
