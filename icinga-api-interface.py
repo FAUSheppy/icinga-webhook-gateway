@@ -32,14 +32,14 @@ def create_master_host():
     if not response.success:
         raise RuntimeError("Failed to create Icinga Dummy-Host: '{}'".format(response.response)
 
-def _build_service_name(async_service_name):
+def _build_service_name(async_service_name, user):
     
-    return "ais_{}".format(async_service_name)
+    return "{}_async_{}".format(user, async_service_name)
 
-def create_service(async_service_name):
+def create_service(async_service_name, user):
 
     client = _create_client() 
-    name = _build_service_name(async_service_name)
+    name = _build_service_name(async_service_name, user)
 
     response = client.objects.get("Host", filters={'name': host_name})
     if not response.success 
