@@ -305,7 +305,7 @@ def create_app():
         with open(main_config_file) as config_file:
             config_data = json.load(config_file)
             app.config |= config_data
-            print(config_data)
+            print(app.config)
 
     if os.path.isfile(app.config["JSON_CONFIG_FILE"]):
         with open(app.config["JSON_CONFIG_FILE"]) as f:
