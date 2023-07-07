@@ -4,3 +4,4 @@ flask-sqlalchemy
 flasl-wtf
 waitress
 requests
+icinga2api
