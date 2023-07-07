@@ -160,3 +160,13 @@ body{
     border-color: aliceblue;
     width: fit-content;
 }
+
+.static-configured-info{
+    margin-bottom: 20px;
+    color: aliceblue;
+    text-align: center;
+    padding: 8px;
+    border-style: solid;
+    border-color: red;
+    font-size: 17px;
+}

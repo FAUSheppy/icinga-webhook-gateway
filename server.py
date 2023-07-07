@@ -40,6 +40,8 @@ class Service(db.Model):
     timeout = Column(Integer)
     owner   = Column(String)
 
+    staticly_configured = Column(Boolean)
+
 class Status(db.Model):
 
     __tablename__ = "states"
@@ -301,7 +303,9 @@ def create_app():
 
     for key in config:
         timeout = timeparse.timeparse(config[key]["timeout"])
-        db.session.merge(Service(service=key, token=config[key]["token"], timeout=timeout))
+        staticly_configured = True
+        db.session.merge(Service(service=key, token=config[key]["token"], 
+                                    staticly_configured=staticly_configured, timeout=timeout))
         db.session.commit()
         
 

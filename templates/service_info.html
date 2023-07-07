@@ -4,6 +4,12 @@
         {% include "navbar.html" %}
         <div class="container">
             <h2 class="service-name">Service: {{ service.service }}</h2>
+            {% if service.staticly_configured %}
+            <h4 class="static-configured-info">
+                This service is staticly configured, to permanently delete it, you have to remove
+                it from the configuration file on the server.
+            </h4>
+            {% endif %}
 
             <a class="service-info-button mt-3" style="background-color: orange;"
                 href="/entry-form?service={{ service.service }}">Modify</a>
