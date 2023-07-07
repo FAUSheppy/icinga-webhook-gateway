@@ -297,6 +297,16 @@ def create_app():
 
     app.config["SECRET_KEY"] = secrets.token_urlsafe(64)
 
+    # load app config #
+    config_dir = app.config["JSON_CONFIG_DIR"]
+    main_config_file = "./{}/config.json".format(config_dir)
+    print(main_config_file)
+    if os.path.isfile(main_config_file):
+        with open(main_config_file) as config_file:
+            config_data = json.load(config_file)
+            app.config |= config_data
+            print(config_data)
+
     if os.path.isfile(app.config["JSON_CONFIG_FILE"]):
         with open(app.config["JSON_CONFIG_FILE"]) as f:
             config |= json.load(f)
