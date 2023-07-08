@@ -181,3 +181,7 @@ body{
 .hover:hover{
     opacity: 0.7;
 }
+
+td{
+    max-width: 500px;
+}
