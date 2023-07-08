@@ -116,7 +116,8 @@ def create_entry(form, user):
 
     service_name = form.service.data or form.service_hidden.data
 
-    service = Service(service=service_name, timeout=int(form.timeout.data),
+    day_delta = datetime.timedelta(days=int(form.timeout.data))
+    service = Service(service=service_name, timeout=day_delta.total_seconds(),
                         owner=user, token=token)
 
     icingatools.create_service(user, service_name, app)
