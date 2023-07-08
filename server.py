@@ -203,6 +203,7 @@ def reload():
     return ("", 204)
 
 @app.route('/', methods=["GET", "POST"])
+@app.route('/report', methods=["GET", "POST"])
 def default():
     if flask.request.method == "GET":
 

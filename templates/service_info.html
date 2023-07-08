@@ -49,14 +49,14 @@
                     -d '{ "service" : "{{ service.service }}",
                         "token" : "{{ service.token }}", <br>
                     "status" : "OK", "info" : "Free Text Information here" }' \<br>
-                    {{ flask.request.url_root }}
+                    {{ flask.request.url_root }}/report
                 </div>
             </div>
 
             <h5 class="my-4">Python</h5>
             <div class="ml-3 example">
                 import requests
-                requests.post("{{ flask.request.url_root }}",<br>
+                requests.post("{{ flask.request.url_root }}/report",<br>
                 <div class="example-indent-double">
                 json= { "service_name" : "{{ service.service }}", <br>
                     <div class="example-indent-double">
