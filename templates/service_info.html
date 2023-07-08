@@ -3,7 +3,7 @@
     <body>
         {% include "navbar.html" %}
         <div class="container">
-            <a href="{{ icinga_link }}">Icinga Link</a>
+
             <h2 class="service-name">Service: {{ service.service }}</h2>
             {% if service.staticly_configured %}
             {% endif %}
@@ -19,6 +19,10 @@
                 configuration file on the server.
             </div>
             {% endif %}
+
+			<a href="{{ icinga_link }}" style="clear: both;" class="last-status hover mr-3">
+			    <p style="color: darkred;">Show in Icinga</p>
+            </a>
 
 			<div class="last-status">
 			{% if status_list | length > 0 %}
