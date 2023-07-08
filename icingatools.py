@@ -54,7 +54,8 @@ def create_service(user, async_service_name, app):
             "vars" : {
                 "host" : "async-icinga.atlantishq.de",
                 "service_name" : async_service_name,
-                "protocol" : "https"
+                "protocol" : "https",
+                "owner" : user
             }
         }
     }
