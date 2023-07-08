@@ -142,7 +142,8 @@ def service_details():
 
     status_list = db.session.query(Status).filter(Status.service==service.service).all()
 
-    icinga_link = icingatools.build_icinga_link_for_service(user, service.service, app)
+    icinga_link = icingatools.build_icinga_link_for_service(user, service.service,
+                        service.staticly_configured, app)
 
     return flask.render_template("service_info.html", service=service, flask=flask,
                                     user=user, status_list=status_list, icinga_link=icinga_link)

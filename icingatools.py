@@ -74,10 +74,15 @@ def delete_service(user, async_service_name, app):
 
     client.objects.delete("Service", service_api_helper_name)
 
-def build_icinga_link_for_service(user, service_name, app):
+def build_icinga_link_for_service(user, service_name, static_configured, app):
 
     name = _build_service_name(user, service_name)
     url_fmt = "{base}/icingaweb2/dashboard/#!/icingaweb2/monitoring/service/show?host={host}&service={service}"
+
+    if static_configured:
+        url_fmt = "{base}/icingaweb2/monitoring/list/services?service={service}&modifyFilter=1"
+        name = service_name
+
     return url_fmt.format(base=app.config["ICINGA_WEB_URL"],
                             host=app.config["ASYNC_ICINGA_DUMMY_HOST"],
                             service=name)
