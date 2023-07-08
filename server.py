@@ -112,7 +112,6 @@ class EntryForm(FlaskForm):
 
 def create_entry(form, user):
 
-    # TODO add entry to icinga
     token = secrets.token_urlsafe(16)
 
     service_name = form.service.data or form.service_hidden.data
