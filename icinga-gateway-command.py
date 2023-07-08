@@ -21,9 +21,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    urlBase = "{proto}://{host}:{port}/?service={service}"
+    urlBase = "{proto}://{host}:{port}/report?service={service}"
     if not args.port:
-        urlBase = "{proto}://{host}/?service={service}"
+        urlBase = "{proto}://{host}/report?service={service}"
 
     url     = urlBase.format(proto=args.protocol, host=args.host,
                                 port=args.port, service=args.service)
