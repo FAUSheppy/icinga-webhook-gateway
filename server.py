@@ -179,7 +179,7 @@ def create_interface():
         service = db.session.query(Service).filter(Service.service == modify_service_name).first()
         if service and service.owner == user:
             form.service.default = service.service
-            form.timeout.default = service.timeout
+            form.timeout.default = datetime.timedelta(seconds=service.timeout).days
             form.service_hidden.default = service.service
             form.process()
         else:
