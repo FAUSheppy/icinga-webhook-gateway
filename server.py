@@ -175,7 +175,7 @@ def create_interface():
    
     # handle modification #
     modify_service_name = flask.request.args.get("service")
-    if modify_service_name:
+    if flask.request.method == "POST" and modify_service_name:
         service = db.session.query(Service).filter(Service.service == modify_service_name).first()
         if service and service.owner == user:
             form.service.default = service.service
@@ -184,8 +184,7 @@ def create_interface():
             form.process()
         else:
             return ("Not a valid service to modify", 404)
-    
-    if flask.request.method == "POST":
+    elif flask.request.method == "POST":
         create_entry(form, user)
         service_name = form.service.data or form.service_hidden.data
         return flask.redirect('/service-details?service={}'.format(service_name))
