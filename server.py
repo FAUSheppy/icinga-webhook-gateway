@@ -110,7 +110,7 @@ class EntryForm(FlaskForm):
     service_hidden = HiddenField("service_hidden")
     timeout = DecimalField("Timeout in days", default=30)
 
-def create_entry(form, user, create_icinga_service=False):
+def create_entry(form, user):
 
     token = secrets.token_urlsafe(16)
 
@@ -120,7 +120,8 @@ def create_entry(form, user, create_icinga_service=False):
     service = Service(service=service_name, timeout=day_delta.total_seconds(),
                         owner=user, token=token)
 
-    if create_icinga_service:
+    # service.data set = create, service_hidden.data = modify #
+    if form.service.data:
         icingatools.create_service(user, service_name, app)
 
     db.session.merge(service)
@@ -187,7 +188,7 @@ def create_interface():
             return ("Not a valid service to modify", 404)
 
     if flask.request.method == "POST":
-        create_entry(form, user, create_icinga_service=not bool(modify_service_name))
+        create_entry(form, user)
         service_name = form.service.data or form.service_hidden.data
         return flask.redirect('/service-details?service={}'.format(service_name))
     else:
