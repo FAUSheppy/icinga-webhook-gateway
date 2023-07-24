@@ -176,7 +176,7 @@ def create_interface():
    
     # handle modification #
     modify_service_name = flask.request.args.get("service")
-    if flask.request.method == "POST" and modify_service_name:
+    if modify_service_name:
         service = db.session.query(Service).filter(Service.service == modify_service_name).first()
         if service and service.owner == user:
             form.service.default = service.service
