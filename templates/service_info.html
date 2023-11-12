@@ -59,7 +59,7 @@
                 requests.post("{{ flask.request.url_root.replace("http://", "https://")}}report",
                 <br>
                 <div class="example-indent-double">
-                json= { "service_name" : "{{ service.service }}", <br>
+                json= { "service" : "{{ service.service }}", <br>
                     <div class="example-indent-double">
                     "token" : "{{ service.token }}", <br>
                                 "status" : "OK", </br>
