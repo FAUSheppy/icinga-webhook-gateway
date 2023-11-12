@@ -4,6 +4,24 @@
         {% include "navbar.html" %}
         <div class="container">
 
+            <script>
+                function submit_manual(){
+                    await fetch("/report", {
+                                    headers: {
+                                      'Accept': 'application/json',
+                                      'Content-Type': 'application/json'
+                                    },
+                                    method: "POST",
+                                    body: JSON.stringify({
+                                        "token" : "{{ service.token }}",
+                                        "status" : "OK",
+                                        "info" : "Submitted from Web-Interface" })
+                                    }
+                                )
+                    window.location.reload()
+                    }
+            </script>
+
             <h2 class="service-name">Service: {{ service.service }}</h2>
             {% if service.staticly_configured %}
             {% endif %}
@@ -23,6 +41,10 @@
 			<a href="{{ icinga_link }}" style="clear: both;" class="last-status hover mr-3">
 			    <p style="color: darkred;">Show in Icinga</p>
             </a>
+
+			<button style="clear: both;" class="hover mr-3" onclick="submit_manual()">
+			    <p style="color: darkred;">Submit manual OK</p>
+            </button>
 
 			<div class="last-status">
 			{% if status_list | length > 0 %}
