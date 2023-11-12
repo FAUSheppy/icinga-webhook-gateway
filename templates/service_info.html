@@ -5,21 +5,29 @@
         <div class="container">
 
             <script>
+                function sleep(ms) {
+                    return new Promise(resolve => setTimeout(resolve, ms));
+                }
                 function submit_manual(){
-                    await fetch("/report", {
+                    fetch("/report", {
                                     headers: {
                                       'Accept': 'application/json',
                                       'Content-Type': 'application/json'
                                     },
                                     method: "POST",
                                     body: JSON.stringify({
+                                        "service" : "{{ service.service }}",
                                         "token" : "{{ service.token }}",
                                         "status" : "OK",
                                         "info" : "Submitted from Web-Interface" })
-                                    }
-                                )
-                    window.location.reload()
-                    }
+                    }).then( () => {
+                        sleep(1000).then( () => {
+                            window.location.reload()
+                        })
+                    }).catch( () => {
+                        alert("Submission failed, see console for details.")
+                    })
+                }
             </script>
 
             <h2 class="service-name">Service: {{ service.service }}</h2>
@@ -38,23 +46,23 @@
             </div>
             {% endif %}
 
-			<a href="{{ icinga_link }}" style="clear: both;" class="last-status hover mr-3">
-			    <p style="color: darkred;">Show in Icinga</p>
+            <a href="{{ icinga_link }}" style="clear: both;" class="last-status hover mr-3">
+                <p style="color: darkred;">Show in Icinga</p>
             </a>
 
-			<button style="clear: both;" class="hover mr-3" onclick="submit_manual()">
-			    <p style="color: darkred;">Submit manual OK</p>
+            <button style="clear: both;" class="last-status hover mr-3" onclick="submit_manual()">
+                <p style="color: darkred;">Submit manual OK</p>
             </button>
 
-			<div class="last-status">
-			{% if status_list | length > 0 %}
-			<p class="{{ status_list[0].status }}">
-				{{ status_list[0].status }} submitted on {{ status_list[0].human_date() }}
-			</p>
-			{% else %}
-			<p style="color: darkred;">No status for this service submitted</p>
-			{% endif %}
-			</div>
+            <div class="last-status">
+            {% if status_list | length > 0 %}
+            <p class="{{ status_list[0].status }}">
+                {{ status_list[0].status }} submitted on {{ status_list[0].human_date() }}
+            </p>
+            {% else %}
+            <p style="color: darkred;">No status for this service submitted</p>
+            {% endif %}
+            </div>
 
             <div class="clear p-4 box mt-4 mb-3" style="display: none;">
                 <div class="service-timeout">Timeout: {{ service.timeout }} days</div>
@@ -90,23 +98,23 @@
                 </div>
             </div>
 
-			<table class="mb-4 mt-5 status-table">
-			<thead>
-				<th>Date</th>
-				<th>Status</th>
-				<th>Info</th>
-			</thead>
+            <table class="mb-4 mt-5 status-table">
+            <thead>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Info</th>
+            </thead>
 
-			<tbody class="mt-2">
-				{% for status in status_list %}
-				<tr>
+            <tbody class="mt-2">
+                {% for status in status_list %}
+                <tr>
                     <td>{{ status.human_date()  }}</td>
-					<td class="{{ status.status }}">{{ status.status }}</td>
-					<td>{{ status.info_text     }}</td>
-				</tr>
-				{% endfor %}
-			</tbody>
-			</table>
+                    <td class="{{ status.status }}">{{ status.status }}</td>
+                    <td>{{ status.info_text     }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            </table>
         </div>
     </body>
 </html>
