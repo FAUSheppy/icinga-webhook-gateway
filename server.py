@@ -143,7 +143,7 @@ def service_details():
         return ("Services is not owned by {}".format(user))
 
     status_list_query = db.session.query(Status).filter(Status.service==service.service)
-    status_list = status_list_query.order_by(sqlalchemy.desc(Status.date)).limit(20).all()
+    status_list = status_list_query.order_by(sqlalchemy.desc(Status.timestamp)).limit(20).all()
 
     icinga_link = icingatools.build_icinga_link_for_service(user, service.service,
                         service.staticly_configured, app)
