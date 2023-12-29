@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.9-slim-bookworm
 
 RUN apt update
 RUN apt install python3-pip -y

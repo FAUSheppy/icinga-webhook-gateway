@@ -34,4 +34,4 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          tags: "${{ secrets.REGISTRY }}/athq/async-icinga:latest"
+          tags: "${{ secrets.REGISTRY }}/atlantishq/async-icinga:latest"
