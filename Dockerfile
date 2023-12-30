@@ -1,18 +1,13 @@
-FROM python:3.9-slim-bookworm
-
-RUN apt update
-RUN apt install python3-pip -y
-RUN python3 -m pip install --upgrade pip
-RUN apt install curl -y
-RUN apt autoremove -y
-RUN apt clean
+FROM alpine
+RUN apk add --no-cache py3-pip
+RUN apk add --no-cache curl
 
 WORKDIR /app
 
-RUN python3 -m pip install waitress
+RUN python3 -m pip install --no-cache-dir --break-system-packages waitress
 
 COPY req.txt .
-RUN python3 -m pip install --no-cache-dir -r req.txt
+RUN python3 -m pip install --no-cache-dir --break-system-packages -r req.txt
 
 # precreate database directory for mount (will otherwise be created at before_first_request)
 COPY ./ .
