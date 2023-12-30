@@ -19,7 +19,7 @@ COPY ./ .
 RUN mkdir /app/instance/
 
 HEALTHCHECK --interval=1m --timeout=5s --start-period=10s \
-                CMD /usr/bin/curl --fail http://localhost:5000/ || exit 1
+                CMD /usr/bin/curl --fail http://localhost:5000/alive || exit 1
 EXPOSE 5000/tcp
 
 ENTRYPOINT ["waitress-serve"]
