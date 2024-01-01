@@ -12,7 +12,7 @@ import secrets
 
 import flask_wtf
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, BooleanField, DecimalField, HiddenField
+from wtforms import StringField, SubmitField, BooleanField, DecimalField, HiddenField, SelectField
 from wtforms.validators import DataRequired, Length
 
 from sqlalchemy import Column, Integer, String, Boolean, or_, and_
@@ -41,6 +41,7 @@ class Service(db.Model):
     token   = Column(String)
     timeout = Column(Integer)
     owner   = Column(String)
+    special_type = Column(String)
 
     staticly_configured = Column(Boolean)
 
@@ -56,6 +57,19 @@ class Status(db.Model):
     def human_date(self):
         dt = datetime.datetime.fromtimestamp(self.timestamp)
         return dt.strftime("%d. %B %Y at %H:%M")
+
+class SMARTStatus(db.Model):
+
+    __tablename__ = "smart"
+
+    service     = Column(String, primary_key=True)
+    timestamp   = Column(Integer, primary_key=True)
+    power_cycles = Column(Integer)
+    temperatur   = Column(Integer)
+    avail_spare  = Column(Integer)
+    unsafe_shutdowns  = Column(Integer)
+    critical_warning = Column(Integer)
+    model_number = Column(String)
 
 def buildReponseDict(status, service=None):
 
@@ -108,6 +122,7 @@ class EntryForm(FlaskForm):
 
     service = StringField("Service Name")
     service_hidden = HiddenField("service_hidden")
+    special_type = SelectField("Type", choices=["Default", "SMART"])
     timeout = DecimalField("Timeout in days", default=30)
 
 def create_entry(form, user):
@@ -117,8 +132,13 @@ def create_entry(form, user):
     service_name = form.service.data or form.service_hidden.data
 
     day_delta = datetime.timedelta(days=int(form.timeout.data))
+
+    special_type = form.special_type.data
+    if form.special_type == "Default":
+        special_type = None
+
     service = Service(service=service_name, timeout=day_delta.total_seconds(),
-                        owner=user, token=token)
+                        owner=user, token=token, special_type=special_type)
 
     # service.data set = create, service_hidden.data = modify #
     if form.service.data:
@@ -148,8 +168,11 @@ def service_details():
     icinga_link = icingatools.build_icinga_link_for_service(user, service.service,
                         service.staticly_configured, app)
 
+    smart_entry_list = db.session.query(SMARTStatus).filter(SMARTStatus.service==service.service)
+    smart_entry = smart_entry_list.order_by(SMARTStatus.timestamp.desc()).first()
+
     return flask.render_template("service_info.html", service=service, flask=flask,
-                                    user=user, status_list=status_list, icinga_link=icinga_link)
+                    user=user, status_list=status_list, icinga_link=icinga_link, smart_entry=smart_entry)
 
 
 @app.route("/entry-form", methods=["GET", "POST", "DELETE"])
@@ -182,6 +205,7 @@ def create_interface():
         service = db.session.query(Service).filter(Service.service == modify_service_name).first()
         if service and service.owner == user:
             form.service.default = service.service
+            form.special_type.default = service.special_type
             form.timeout.default = datetime.timedelta(seconds=service.timeout).days
             form.service_hidden.default = service.service
             form.process()

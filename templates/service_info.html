@@ -33,6 +33,11 @@
             <h2 class="service-name">Service: {{ service.service }}</h2>
             {% if service.staticly_configured %}
             {% endif %}
+            {% if service.special_type == "SMART" %}
+            <div class="service-info-button mt-3" style="background-color: orange;">
+                Smart Monitor {% if smart_entry %} for: {{ smart.model_number }} {% endif %}
+            </div>
+            {% endif %}
 
             {% if not service.staticly_configured %}
             <a class="service-info-button mt-3" style="background-color: orange;"
