@@ -1,4 +1,4 @@
-!/usr/bin/python3
+#!/usr/bin/python3
 
 import time
 import flask
@@ -24,7 +24,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
 
 import icingatools
-import smartanalysis
 
 app = flask.Flask("Icinga Report In Gateway")
 
@@ -66,7 +65,7 @@ class SMARTStatus(db.Model):
     service     = Column(String, primary_key=True)
     timestamp   = Column(Integer, primary_key=True)
     power_cycles = Column(Integer)
-    temperatur   = Column(Integer)
+    temperature = Column(Integer)
     available_spare  = Column(Integer)
     unsafe_shutdowns  = Column(Integer)
     critical_warning = Column(Integer)
@@ -175,7 +174,7 @@ def service_details():
     smart_entry = smart_entry_list.order_by(SMARTStatus.timestamp.desc()).first()
 
     return flask.render_template("service_info.html", service=service, flask=flask,
-                    user=user, status_list=status_list, icinga_link=icinga_link, smart_entry=smart_entry)
+                    user=user, status_list=status_list, icinga_link=icinga_link, smart=smart_entry)
 
 
 @app.route("/entry-form", methods=["GET", "POST", "DELETE"])
@@ -299,8 +298,8 @@ def default():
         # get variables #
         service   = flask.request.json.get("service")
         token     = flask.request.json.get("token")
-        status    = flask.request.json["status"]
-        text      = flask.request.json["info"]
+        status    = flask.request.json.get("status")
+        text      = flask.request.json.get("info") or "no_info"
         timestamp = datetime.datetime.now().timestamp()
 
         smart = flask.request.json.get("smart")
@@ -309,6 +308,8 @@ def default():
             return ("'service' ist empty field in json", 400)
         elif not token:
             return ("'token' ist empty field in json", 400)
+        elif not status and not smart:
+            return ("'status' is empty field in json", 400)
 
         # verify token & service in config #
         verifiedServiceObj = db.session.query(Service).filter(
@@ -337,26 +338,26 @@ def record_and_check_smart(service, timestamp, smart):
         raise AssertionError("Trying to record SMART-record for non-SMART service")
 
     # record the status #
-    smart_status = SMARTStatus(service=service.service_name, timestamp=timestamp,
-                        temperature=health_info["temperature"]
-                        critical_warning=health_info["critical_warning"]
-                        unsafe_shutdowns=health_info["unsafe_shutdowns"]
-                        power_cycles=health_info["power_cycles"]
-                        power_on_hours=health_info["power_on_hours"]
-                        available_spare=health_info.get("available_spare")
-                        model_number=smart.get("model_name"]))
+    smart_status = SMARTStatus(service=service.service, timestamp=timestamp,
+                        temperature=health_info["temperature"],
+                        critical_warning=health_info["critical_warning"],
+                        unsafe_shutdowns=health_info["unsafe_shutdowns"],
+                        power_cycles=health_info["power_cycles"],
+                        power_on_hours=health_info["power_on_hours"],
+                        available_spare=health_info.get("available_spare"),
+                        model_number=smart.get("model_name"))
 
-    db.add(smart_status)
-    db.commit()
+    db.session.add(smart_status)
+    db.session.commit()
 
     # check the status #
     smart_last_query = db.session.query(SMARTStatus)
-    smart_last_query = smart_last_query.filter(SMARTStatus.service_name==service.service_name)
+    smart_last_query = smart_last_query.filter(SMARTStatus.service==service.service)
     smart_last = smart_last_query.order_by(sqlalchemy.desc(SMARTStatus.timestamp)).first()
     smart_second_last = smart_last_query.order_by(sqlalchemy.desc(SMARTStatus.timestamp)).offset(1).first()
 
     # last record (max 6 months ago) #
-    timestampt_minus_6m = datetime.datetime.now() - datetime.timedelta(months=6)
+    timestampt_minus_6m = datetime.datetime.now() - datetime.timedelta(days=180)
     smart_old_query = smart_last_query.filter(SMARTStatus.timestamp > timestampt_minus_6m.timestamp())
     smart_old = smart_old_query.order_by(sqlalchemy.asc(SMARTStatus.timestamp)).first()
 
@@ -365,7 +366,7 @@ def record_and_check_smart(service, timestamp, smart):
         return ("Disk Temperatur {}".format(smart_last.temperature), "CRITICAL")
 
     # critial != 0 #
-    if smart_last_query.critial != 0:
+    if smart_last.critical_warning != 0:
         return ("SMART reports disk critical => oO better do something about this", "CRITICAL")
 
     # unsafe_shutdowns +1 #
@@ -376,13 +377,13 @@ def record_and_check_smart(service, timestamp, smart):
     spare = smart_old.available_spare - smart_last.available_spare
     if spare >= 10:
         return ("Strong degration in SSD spare space ({} in under 6 months)".format(
-                    spare_change, "WARNING")
+                    spare_change, "WARNING"))
 
     # available_spare #
     if smart_last.available_spare < 50:
-        return ("Available SSD spare <50 ({})".format(spare_change, "WARNING")
-    elif smart_last.available_spare <25:
-        return ("Available SSD spare <25 ({}) YOUR DISK WILL DIE SOON".format(spare_change, "CRITIAL")
+        return ("SSD spare <50 ({})".format(spare_change, "WARNING"))
+    elif smart_last.available_spare < 25:
+        return ("SSD spare <25 ({}) YOUR DISK WILL DIE SOON".format(spare_change, "CRITIAL"))
 
     return ("OK", "")
 
@@ -426,8 +427,11 @@ def create_app():
                                     owner=config[key]["owner"]))
         db.session.commit()
 
-    # create dummy host #
-    icingatools.create_master_host(app)
+    # create icinga host #
+    if not app.config.get("ICINGA_API_URL"):
+        print("ICINGA_API_URL not defined. Not connecting Icinga", file=sys.stderr)
+    else:
+        icingatools.create_master_host(app)
 
 
 if __name__ == "__main__":

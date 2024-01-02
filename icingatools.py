@@ -41,6 +41,9 @@ def _build_service_name(user, async_service_name):
 
 def create_service(user, async_service_name, app):
 
+    if not app.config.get("ICINGA_API_URL"):
+        return
+
     client = _create_client(app)
     name = _build_service_name(user, async_service_name)
     host_name = app.config["ASYNC_ICINGA_DUMMY_HOST"]
@@ -66,6 +69,9 @@ def create_service(user, async_service_name, app):
     response = client.objects.create("Service", service_api_helper_name, **service_config)
 
 def delete_service(user, async_service_name, app):
+
+    if not app.config.get("ICINGA_API_URL"):
+        return
 
     client = _create_client(app)
     name = _build_service_name(user, async_service_name)
