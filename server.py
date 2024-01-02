@@ -67,7 +67,7 @@ class SMARTStatus(db.Model):
     timestamp   = Column(Integer, primary_key=True)
     power_cycles = Column(Integer)
     temperatur   = Column(Integer)
-    avail_spare  = Column(Integer)
+    available_spare  = Column(Integer)
     unsafe_shutdowns  = Column(Integer)
     critical_warning = Column(Integer)
     model_number = Column(String)
@@ -184,7 +184,7 @@ def create_interface():
     user = str(flask.request.headers.get("X-Forwarded-Preferred-Username"))
 
     # check if is delete #
-    operation = flask.request.args.get("operation") 
+    operation = flask.request.args.get("operation")
     if operation and operation == "delete" :
 
         service_delete_name = flask.request.args.get("service")
@@ -201,7 +201,7 @@ def create_interface():
         return flask.redirect("/overview")
 
     form = EntryForm()
-   
+
     # handle modification #
     modify_service_name = flask.request.args.get("service")
     if modify_service_name:
@@ -279,7 +279,7 @@ def default():
             if not lastSuccess.timestamp == 0 and delta > timeout and latestInfoIsSuccess:
 
                 # lastes info is success but timed out #
-                lastSuccess.info_text = "Service {} overdue since {}".format(service, str(delta)) 
+                lastSuccess.info_text = "Service {} overdue since {}".format(service, str(delta))
                 if timeout/delta > 0.9 or (delta - timeout) < datetime.timedelta(hours=12):
                     lastSuccess.status = "WARNING"
                 else:
@@ -318,7 +318,7 @@ def default():
             return ("Service ({}) with this token ({}) not found in DB".format(service, token), 401)
         else:
 
-            # handle a SMART-record submission (with errorhandling) # 
+            # handle a SMART-record submission (with errorhandling) #
             if smart:
                 text, status = record_and_check_smart(verifiedServiceObj, timestamp, smart)
 
@@ -338,34 +338,57 @@ def record_and_check_smart(service, timestamp, smart):
 
     # record the status #
     smart_status = SMARTStatus(service=service.service_name, timestamp=timestamp,
-                        temperatur=health_info["temperature"]
+                        temperature=health_info["temperature"]
                         critical_warning=health_info["critical_warning"]
                         unsafe_shutdowns=health_info["unsafe_shutdowns"]
                         power_cycles=health_info["power_cycles"]
                         power_on_hours=health_info["power_on_hours"]
-                        avail_spare=health_info.get("available_spare")
-                        model_number=smart.get("model_name"])
+                        available_spare=health_info.get("available_spare")
+                        model_number=smart.get("model_name"]))
 
     db.add(smart_status)
     db.commit()
 
     # check the status #
-    # temp average > X
-    # critial != 0
-    # unsafe_shutdowns +1
-    # powercycles > 2000 = 0
-    # poweron hours > 20000
-    # available_spare -10 pro 6months
-    # available_spare <50
-    # TODO
-    db.query(SMARTStatus).filter(SMARTStatus.timestamp > 
-    smartanalysis.analyse(smartanalysis
+    smart_last_query = db.session.query(SMARTStatus)
+    smart_last_query = smart_last_query.filter(SMARTStatus.service_name==service.service_name)
+    smart_last = smart_last_query.order_by(sqlalchemy.desc(SMARTStatus.timestamp)).first()
+    smart_second_last = smart_last_query.order_by(sqlalchemy.desc(SMARTStatus.timestamp)).offset(1).first()
 
-    return (text, status)
-    
+    # last record (max 6 months ago) #
+    timestampt_minus_6m = datetime.datetime.now() - datetime.timedelta(months=6)
+    smart_old_query = smart_last_query.filter(SMARTStatus.timestamp > timestampt_minus_6m.timestamp())
+    smart_old = smart_old_query.order_by(sqlalchemy.asc(SMARTStatus.timestamp)).first()
+
+    # temp max > X #
+    if smart_last.temperature > 50:
+        return ("Disk Temperatur {}".format(smart_last.temperature), "CRITICAL")
+
+    # critial != 0 #
+    if smart_last_query.critial != 0:
+        return ("SMART reports disk critical => oO better do something about this", "CRITICAL")
+
+    # unsafe_shutdowns +1 #
+    if smart_second_last.unsafe_shutdowns - smart_last.unsafe_shutdowns >= 1:
+        return ("Disk had {} unsafe shutdown".format(smart_last.unsafe_shutdowns), "WARNING")
+
+    # available_spare -10 pro 6months #
+    spare = smart_old.available_spare - smart_last.available_spare
+    if spare >= 10:
+        return ("Strong degration in SSD spare space ({} in under 6 months)".format(
+                    spare_change, "WARNING")
+
+    # available_spare #
+    if smart_last.available_spare < 50:
+        return ("Available SSD spare <50 ({})".format(spare_change, "WARNING")
+    elif smart_last.available_spare <25:
+        return ("Available SSD spare <25 ({}) YOUR DISK WILL DIE SOON".format(spare_change, "CRITIAL")
+
+    return ("OK", "")
+
 
 def create_app():
-    
+
     db.create_all()
     config = {}
 
@@ -398,14 +421,14 @@ def create_app():
     for key in config:
         timeout = timeparse.timeparse(config[key]["timeout"])
         staticly_configured = True
-        db.session.merge(Service(service=key, token=config[key]["token"], 
+        db.session.merge(Service(service=key, token=config[key]["token"],
                                     staticly_configured=staticly_configured, timeout=timeout,
                                     owner=config[key]["owner"]))
         db.session.commit()
 
     # create dummy host #
     icingatools.create_master_host(app)
-        
+
 
 if __name__ == "__main__":
 
