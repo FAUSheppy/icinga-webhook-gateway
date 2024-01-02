@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+!/usr/bin/python3
 
 import time
 import flask
@@ -24,6 +24,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
 
 import icingatools
+import smartanalysis
 
 app = flask.Flask("Icinga Report In Gateway")
 
@@ -70,6 +71,8 @@ class SMARTStatus(db.Model):
     unsafe_shutdowns  = Column(Integer)
     critical_warning = Column(Integer)
     model_number = Column(String)
+    power_cycles = Column(Integer)
+    power_on_hours = Column(Integer)
 
 def buildReponseDict(status, service=None):
 
@@ -294,11 +297,13 @@ def default():
     elif flask.request.method == "POST":
 
         # get variables #
-        service   = flask.request.json["service"]
-        token     = flask.request.json["token"]
+        service   = flask.request.json.get("service")
+        token     = flask.request.json.get("token")
         status    = flask.request.json["status"]
         text      = flask.request.json["info"]
         timestamp = datetime.datetime.now().timestamp()
+
+        smart = flask.request.json.get("smart")
 
         if not service:
             return ("'service' ist empty field in json", 400)
@@ -312,12 +317,52 @@ def default():
         if not verifiedServiceObj:
             return ("Service ({}) with this token ({}) not found in DB".format(service, token), 401)
         else:
+
+            # handle a SMART-record submission (with errorhandling) # 
+            if smart:
+                text, status = record_and_check_smart(verifiedServiceObj, timestamp, smart)
+
             status = Status(service=service, timestamp=timestamp, status=status, info_text=text)
             db.session.merge(status)
             db.session.commit()
             return ("", 204)
     else:
         return ("Method not implemented: {}".format(flask.request.method), 405)
+
+def record_and_check_smart(service, timestamp, smart):
+
+    health_info = smart["nvme_smart_health_information_log"]
+
+    if not service.special_type == "SMART":
+        raise AssertionError("Trying to record SMART-record for non-SMART service")
+
+    # record the status #
+    smart_status = SMARTStatus(service=service.service_name, timestamp=timestamp,
+                        temperatur=health_info["temperature"]
+                        critical_warning=health_info["critical_warning"]
+                        unsafe_shutdowns=health_info["unsafe_shutdowns"]
+                        power_cycles=health_info["power_cycles"]
+                        power_on_hours=health_info["power_on_hours"]
+                        avail_spare=health_info.get("available_spare")
+                        model_number=smart.get("model_name"])
+
+    db.add(smart_status)
+    db.commit()
+
+    # check the status #
+    # temp average > X
+    # critial != 0
+    # unsafe_shutdowns +1
+    # powercycles > 2000 = 0
+    # poweron hours > 20000
+    # available_spare -10 pro 6months
+    # available_spare <50
+    # TODO
+    db.query(SMARTStatus).filter(SMARTStatus.timestamp > 
+    smartanalysis.analyse(smartanalysis
+
+    return (text, status)
+    
 
 def create_app():
     
