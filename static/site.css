@@ -157,17 +157,18 @@ body{
 
 .smart-info{
     font-family: monospace;
-   
+
     padding-top: 2px;
     padding-top: 2px;
     padding-left: 5px;
+    
     padding-left: 5px;
 
     color: black;
 
     border: none;
     outline: none;
-    cursor: pointer;
+    cursor: auto;
 }
 
 .box{
