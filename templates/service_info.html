@@ -33,11 +33,6 @@
             <h2 class="service-name">Service: {{ service.service }}</h2>
             {% if service.staticly_configured %}
             {% endif %}
-            {% if service.special_type == "SMART" %}
-            <div class="service-info-button mt-3" style="background-color: orange;">
-                Smart Monitor {% if smart_entry %} for: {{ smart.model_number }} {% endif %}
-            </div>
-            {% endif %}
 
             {% if not service.staticly_configured %}
             <a class="service-info-button mt-3" style="background-color: orange;"
@@ -76,8 +71,39 @@
                      class="service-token">Secret Token: {{ service.token }}</div>
             </div>
 
+            {% if service.special_type == "SMART" %}
+            <div class="clear smart-info mt-3" style="background-color: orange;">
+                Smart Monitor {% if smart %} for: {{ smart.model_number }} {% endif %}
+            </div>
+            <div class="clear smart-info mt-3" style="background-color: orange;">
+                Example below requires smartmontools ("smartctl") in PATH.
+                On Linux this is usually available via the package manager,
+                on Windows install it from the 
+                <a style="text-decoration: underline; color: #5000e1; font-weight: bold;" href="https://www.smartmontools.org/wiki/Download#InstalltheWindowspackage">offical page</a>.
+            </div>
+            {% endif %}
+
+            {% if smart %}
+            <h5 class="clear my-4">Linux</h5>
+            {% else %}
             <h5 class="clear my-4">Curl</h5>
+            {% endif %}
             <div class="ml-3 example">
+                {% if smart %}
+                SMART='{ <br>
+                <div class="example-indent">
+                    "service" : "{{ service.service }}", <br>
+                    "token"   : "{{ service.token }}", <br>
+                    "status"  : "N/A", <br>
+                    "smart"   : '$(/sbin/smartctl -a /dev/nvme0n1 --json)' <br>
+                </div>
+                }' <br><br>
+                curl -X POST -H "Content-Type: application/json" \ <br>
+                    <div class="example-indent">
+                    --data "${SMART}" \ <br>
+                    {{ flask.request.url_root.replace("http://", "https://" )}}report
+                    </div>
+                {% else %}
                 curl -X POST \ <br>
                 <div class="example-indent">
                     -H "Content-Type: application/json" \ <br>
@@ -86,6 +112,7 @@
                     "status" : "OK", "info" : "Free Text Information here" }' \<br>
                     {{ flask.request.url_root.replace("http://", "https://" )}}report
                 </div>
+                {% endif %}
             </div>
 
             <h5 class="my-4">Python</h5>
