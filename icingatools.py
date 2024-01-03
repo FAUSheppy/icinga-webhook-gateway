@@ -41,6 +41,9 @@ def _build_service_name(user, async_service_name):
 
 def create_service(user, async_service_name, app):
 
+    if not app.config.get("ICINGA_API_URL"):
+        return
+
     client = _create_client(app)
     name = _build_service_name(user, async_service_name)
     host_name = app.config["ASYNC_ICINGA_DUMMY_HOST"]
@@ -67,6 +70,9 @@ def create_service(user, async_service_name, app):
 
 def delete_service(user, async_service_name, app):
 
+    if not app.config.get("ICINGA_API_URL"):
+        return
+
     client = _create_client(app)
     name = _build_service_name(user, async_service_name)
     host_name = app.config["ASYNC_ICINGA_DUMMY_HOST"]
@@ -83,7 +89,15 @@ def build_icinga_link_for_service(user, service_name, static_configured, app):
         url_fmt = "{base}/icingaweb2/monitoring/list/services?service={service}&modifyFilter=1"
         name = service_name
 
-    return url_fmt.format(base=app.config["ICINGA_WEB_URL"],
-                            host=app.config["ASYNC_ICINGA_DUMMY_HOST"],
+    icinga_web_url = app.config.get("ICINGA_WEB_URL")
+    if not icinga_web_url:
+        icinga_web_url = "ICINGA_WEB_URL_NOT_SET:"
+
+    dummy_host=app.config.get("ASYNC_ICINGA_DUMMY_HOST")
+    if not dummy_host:
+        dummy_host = "ASYNC_ICINGA_DUMMY_HOST_NOT_SET:"
+
+    return url_fmt.format(base=icinga_web_url,
+                            host=dummy_host,
                             service=name)
 
