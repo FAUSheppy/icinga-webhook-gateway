@@ -37,6 +37,9 @@
                 </br>
                 {{ form.timeout.label }}    {{ form.timeout() }}        </br>
 
+                </br>
+                {{ form.special_type.label }}    {{ form.special_type() }}        </br>
+
                 {% if is_modification %}
                 <input class="form-button mt-4" type="submit" value="Send Modification">
                 {% else %}

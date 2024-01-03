@@ -12,7 +12,7 @@ import secrets
 
 import flask_wtf
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, BooleanField, DecimalField, HiddenField
+from wtforms import StringField, SubmitField, BooleanField, DecimalField, HiddenField, SelectField
 from wtforms.validators import DataRequired, Length
 
 from sqlalchemy import Column, Integer, String, Boolean, or_, and_
@@ -24,6 +24,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
 
 import icingatools
+import smarttools
 
 app = flask.Flask("Icinga Report In Gateway")
 
@@ -41,6 +42,7 @@ class Service(db.Model):
     token   = Column(String)
     timeout = Column(Integer)
     owner   = Column(String)
+    special_type = Column(String)
 
     staticly_configured = Column(Boolean)
 
@@ -56,6 +58,22 @@ class Status(db.Model):
     def human_date(self):
         dt = datetime.datetime.fromtimestamp(self.timestamp)
         return dt.strftime("%d. %B %Y at %H:%M")
+
+class SMARTStatus(db.Model):
+
+    __tablename__ = "smart"
+
+    service     = Column(String, primary_key=True)
+    timestamp   = Column(Integer, primary_key=True)
+    power_cycles = Column(Integer)
+    temperature = Column(Integer)
+    available_spare  = Column(Integer)
+    unsafe_shutdowns  = Column(Integer)
+    critical_warning = Column(Integer)
+    model_number = Column(String)
+    power_cycles = Column(Integer)
+    power_on_hours = Column(Integer)
+    wearleveling_count = Column(Integer)
 
 def buildReponseDict(status, service=None):
 
@@ -108,6 +126,7 @@ class EntryForm(FlaskForm):
 
     service = StringField("Service Name")
     service_hidden = HiddenField("service_hidden")
+    special_type = SelectField("Type", choices=["Default", "SMART"])
     timeout = DecimalField("Timeout in days", default=30)
 
 def create_entry(form, user):
@@ -124,8 +143,13 @@ def create_entry(form, user):
             raise AssertionError("WTF Service without Token {}".format(service_name))
 
     day_delta = datetime.timedelta(days=int(form.timeout.data))
+
+    special_type = form.special_type.data
+    if form.special_type == "Default":
+        special_type = None
+
     service = Service(service=service_name, timeout=day_delta.total_seconds(),
-                        owner=user, token=token)
+                        owner=user, token=token, special_type=special_type)
 
     # service.data set = create, service_hidden.data = modify #
     if form.service.data:
@@ -155,8 +179,11 @@ def service_details():
     icinga_link = icingatools.build_icinga_link_for_service(user, service.service,
                         service.staticly_configured, app)
 
+    smart_entry_list = db.session.query(SMARTStatus).filter(SMARTStatus.service==service.service)
+    smart_entry = smart_entry_list.order_by(SMARTStatus.timestamp.desc()).first()
+
     return flask.render_template("service_info.html", service=service, flask=flask,
-                                    user=user, status_list=status_list, icinga_link=icinga_link)
+                    user=user, status_list=status_list, icinga_link=icinga_link, smart=smart_entry)
 
 
 @app.route("/entry-form", methods=["GET", "POST", "DELETE"])
@@ -165,7 +192,7 @@ def create_interface():
     user = str(flask.request.headers.get("X-Forwarded-Preferred-Username"))
 
     # check if is delete #
-    operation = flask.request.args.get("operation") 
+    operation = flask.request.args.get("operation")
     if operation and operation == "delete" :
 
         service_delete_name = flask.request.args.get("service")
@@ -182,13 +209,14 @@ def create_interface():
         return flask.redirect("/overview")
 
     form = EntryForm()
-   
+
     # handle modification #
     modify_service_name = flask.request.args.get("service")
     if modify_service_name:
         service = db.session.query(Service).filter(Service.service == modify_service_name).first()
         if service and service.owner == user:
             form.service.default = service.service
+            form.special_type.default = service.special_type
             form.timeout.default = datetime.timedelta(seconds=service.timeout).days
             form.service_hidden.default = service.service
             form.process()
@@ -259,7 +287,7 @@ def default():
             if not lastSuccess.timestamp == 0 and delta > timeout and latestInfoIsSuccess:
 
                 # lastes info is success but timed out #
-                lastSuccess.info_text = "Service {} overdue since {}".format(service, str(delta)) 
+                lastSuccess.info_text = "Service {} overdue since {}".format(service, str(delta))
                 if timeout/delta > 0.9 or (delta - timeout) < datetime.timedelta(hours=12):
                     lastSuccess.status = "WARNING"
                 else:
@@ -277,16 +305,27 @@ def default():
     elif flask.request.method == "POST":
 
         # get variables #
-        service   = flask.request.json["service"]
-        token     = flask.request.json["token"]
-        status    = flask.request.json["status"]
-        text      = flask.request.json["info"]
+        service   = flask.request.json.get("service")
+        token     = flask.request.json.get("token")
+        status    = flask.request.json.get("status")
+        text      = flask.request.json.get("info") or "no_info"
         timestamp = datetime.datetime.now().timestamp()
+
+        smart = flask.request.json.get("smart")
+
+        # check smart json quoting problems #
+        if smart and type(smart) == str:
+            try:
+                smart = json.loads(smart)
+            except json.decoder.JSONDecodeError as e:
+                return ("Error in SMART-json {}".format(e), 415)
 
         if not service:
             return ("'service' ist empty field in json", 400)
         elif not token:
             return ("'token' ist empty field in json", 400)
+        elif not status and not smart:
+            return ("'status' is empty field in json", 400)
 
         # verify token & service in config #
         verifiedServiceObj = db.session.query(Service).filter(
@@ -295,15 +334,93 @@ def default():
         if not verifiedServiceObj:
             return ("Service ({}) with this token ({}) not found in DB".format(service, token), 401)
         else:
-            status = Status(service=service, timestamp=timestamp, status=status, info_text=text)
+
+            # handle a SMART-record submission (with errorhandling) #
+            if smart and not verifiedServiceObj.special_type == "SMART":
+                return ("SMART Field for non-SMART type service", 415)
+            elif smart:
+                text, status = record_and_check_smart(verifiedServiceObj,
+                                                        timestamp, smart)
+
+            status = Status(service=service, timestamp=timestamp, status=status, 
+                                info_text=text)
             db.session.merge(status)
             db.session.commit()
             return ("", 204)
     else:
         return ("Method not implemented: {}".format(flask.request.method), 405)
 
+def record_and_check_smart(service, timestamp, smart):
+
+    if "nvme_smart_health_information_log" in smart:
+        health_info = smart["nvme_smart_health_information_log"]
+    else:
+        health_info = smarttools.normalize(smart)
+
+    if not service.special_type == "SMART":
+        raise AssertionError("Trying to record SMART-record for non-SMART service")
+
+    # record the status #
+    smart_status = SMARTStatus(service=service.service, timestamp=timestamp,
+                        temperature=health_info["temperature"],
+                        critical_warning=health_info["critical_warning"],
+                        unsafe_shutdowns=health_info["unsafe_shutdowns"],
+                        power_cycles=health_info["power_cycles"],
+                        power_on_hours=health_info["power_on_hours"],
+                        available_spare=health_info.get("available_spare"),
+                        model_number=smart.get("model_name"),
+                        wearleveling_count=health_info.get("wearleveling_count"))
+
+    db.session.add(smart_status)
+    db.session.commit()
+
+    # check the status #
+    smart_last_query = db.session.query(SMARTStatus)
+    smart_last_query = smart_last_query.filter(SMARTStatus.service==service.service)
+    smart_last = smart_last_query.order_by(sqlalchemy.desc(SMARTStatus.timestamp)).first()
+    smart_second_last = smart_last_query.order_by(sqlalchemy.desc(
+                            SMARTStatus.timestamp)).offset(1).first()
+
+    # last record (max 6 months ago) #
+    timestampt_minus_6m = datetime.datetime.now() - datetime.timedelta(days=180)
+    smart_old_query = smart_last_query.filter(
+                        SMARTStatus.timestamp > timestampt_minus_6m.timestamp())
+    smart_old = smart_old_query.order_by(sqlalchemy.asc(SMARTStatus.timestamp)).first()
+
+    # critial != 0 #
+    if smart_last.critical_warning != 0:
+        return ("SMART reports disk critical => oO better do something about this", "CRITICAL")
+
+    # wearleveling < 20% (SAMSUNG only) #
+    if smart_last.wearleveling_count and smart_last.wearleveling_count <= 20:
+        return ("SMART report prefail disk (wear_level < 20%)", "CRITICAL")
+
+    # temp max > X #
+    if smart_last.temperature > 50:
+        return ("Disk Temperatur {}".format(smart_last.temperature), "CRITICAL")
+
+    # available_SSD spare #
+    spare_change = smart_old.available_spare - smart_last.available_spare
+
+    if smart_last.available_spare <= 25:
+        return ("SSD spare <25 ({}) YOUR DISK WILL DIE SOON".format(spare_change),
+                    "CRITICAL")
+    elif smart_last.available_spare <= 50:
+        return ("SSD spare <50 ({})".format(spare_change), "WARNING")
+    elif spare_change >= 10:
+        return ("Strong degration in SSD spare space ({} in under 6 months)".format(
+                    spare_change), "WARNING")
+
+    # unsafe_shutdowns +1 #
+    if smart_second_last.unsafe_shutdowns - smart_last.unsafe_shutdowns >= 1:
+        return ("Disk had {} unsafe shutdowns".format(smart_last.unsafe_shutdowns),
+                    "WARNING")
+
+    return ("{} - no problems detected".format(smart_last.model_number), "OK")
+
+
 def create_app():
-    
+
     db.create_all()
     config = {}
 
