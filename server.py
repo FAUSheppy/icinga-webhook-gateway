@@ -116,6 +116,13 @@ def create_entry(form, user):
 
     service_name = form.service.data or form.service_hidden.data
 
+    # keep token if modification #
+    s_tmp = db.session.query(Service).filter(Service.service == service_name).first()
+    if s_tmp:
+        token = s_tmp.token
+        if not token:
+            raise AssertionError("WTF Service without Token {}".format(service_name))
+
     day_delta = datetime.timedelta(days=int(form.timeout.data))
     service = Service(service=service_name, timeout=day_delta.total_seconds(),
                         owner=user, token=token)
