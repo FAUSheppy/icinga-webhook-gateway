@@ -34,6 +34,8 @@ def normalize(smart):
             elif name == "power_on_hours":
                 target_name = "power_on_hours"
                 use_raw = True
+            elif name == "perc_avail_resrvd_space":
+                target_name = "available_spare"
 
             # check if metric should be recorded #
             if target_name in ret:
