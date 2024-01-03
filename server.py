@@ -329,14 +329,17 @@ def create_app():
     for key in config:
         timeout = timeparse.timeparse(config[key]["timeout"])
         staticly_configured = True
-        db.session.merge(Service(service=key, token=config[key]["token"], 
+        db.session.merge(Service(service=key, token=config[key]["token"],
                                     staticly_configured=staticly_configured, timeout=timeout,
                                     owner=config[key]["owner"]))
         db.session.commit()
 
-    # create dummy host #
-    icingatools.create_master_host(app)
-        
+    # create icinga host #
+    if not app.config.get("ICINGA_API_URL"):
+        print("ICINGA_API_URL not defined. Not connecting Icinga", file=sys.stderr)
+    else:
+        icingatools.create_master_host(app)
+
 
 if __name__ == "__main__":
 
