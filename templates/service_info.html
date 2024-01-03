@@ -83,13 +83,13 @@
             </div>
             {% endif %}
 
-            {% if smart %}
+            {% if service.special_type == "SMART" %}
             <h5 class="clear my-4">Linux</h5>
             {% else %}
             <h5 class="clear my-4">Curl</h5>
             {% endif %}
             <div class="ml-3 example">
-                {% if smart %}
+                {% if service.special_type == "SMART" %}
                 SMART='{ <br>
                 <div class="example-indent">
                     "service" : "{{ service.service }}", <br>
@@ -115,7 +115,7 @@
                 {% endif %}
             </div>
 
-            {% if smart %}
+            {% if service.special_type == "SMART" %}
             <h5 class="my-4">Windows</h5>
             <div class="ml-3 example">
                 $SMART = @{ <br>
