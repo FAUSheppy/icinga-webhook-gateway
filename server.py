@@ -133,6 +133,13 @@ def create_entry(form, user):
 
     service_name = form.service.data or form.service_hidden.data
 
+    # keep token if modification #
+    s_tmp = db.session.query(Service).filter(Service.service == service_name).first()
+    if s_tmp:
+        token = s_tmp.token
+        if not token:
+            raise AssertionError("WTF Service without Token {}".format(service_name))
+
     day_delta = datetime.timedelta(days=int(form.timeout.data))
 
     special_type = form.special_type.data
@@ -320,10 +327,14 @@ def default():
         else:
 
             # handle a SMART-record submission (with errorhandling) #
-            if smart:
-                text, status = record_and_check_smart(verifiedServiceObj, timestamp, smart)
+            if smart and not verifiedServiceObj.special_type == "SMART":
+                return ("SMART Field for non-SMART type service", 415)
+            elif smart:
+                text, status = record_and_check_smart(verifiedServiceObj,
+                                                        timestamp, smart)
 
-            status = Status(service=service, timestamp=timestamp, status=status, info_text=text)
+            status = Status(service=service, timestamp=timestamp, status=status, 
+                                info_text=text)
             db.session.merge(status)
             db.session.commit()
             return ("", 204)
