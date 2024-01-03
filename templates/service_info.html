@@ -115,6 +115,20 @@
                 {% endif %}
             </div>
 
+            {% if smart %}
+            <h5 class="my-4">Windows</h5>
+            <div class="ml-3 example">
+                $SMART = @{ <br>
+                <div class="example-indent">
+                  service = "{{ service.service }}"<br>
+                  token = "{{ service.token }}"<br>
+                  status = "N/A"<br>
+                  smart = "$(smartctl -a C: --json | Out-String)"<br>
+                </div>
+                } | ConvertTo-Json<br><br>
+                Invoke-RestMethod -TimeoutSec 2 -Uri "{{ flask.request.url_root.replace("http://", "https://" )}}report" -Method Post -Headers @{"Content-Type"="application/json"} -Body $SMART
+            </div>
+            {% else %}
             <h5 class="my-4">Python</h5>
             <div class="ml-3 example">
                     import requests<br>
@@ -129,6 +143,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             <table class="mb-4 mt-5 status-table">
             <thead>

@@ -24,6 +24,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
 
 import icingatools
+import smarttools
 
 app = flask.Flask("Icinga Report In Gateway")
 
@@ -72,6 +73,7 @@ class SMARTStatus(db.Model):
     model_number = Column(String)
     power_cycles = Column(Integer)
     power_on_hours = Column(Integer)
+    wearleveling_count = Column(Integer)
 
 def buildReponseDict(status, service=None):
 
@@ -311,6 +313,13 @@ def default():
 
         smart = flask.request.json.get("smart")
 
+        # check smart json quoting problems #
+        if smart and type(smart) == str:
+            try:
+                smart = json.loads(smart)
+            except json.decoder.JSONDecodeError as e:
+                return ("Error in SMART-json {}".format(e), 415)
+
         if not service:
             return ("'service' ist empty field in json", 400)
         elif not token:
@@ -343,7 +352,10 @@ def default():
 
 def record_and_check_smart(service, timestamp, smart):
 
-    health_info = smart["nvme_smart_health_information_log"]
+    if "nvme_smart_health_information_log" in smart:
+        health_info = smart["nvme_smart_health_information_log"]
+    else:
+        health_info = smarttools.normalize(smart)
 
     if not service.special_type == "SMART":
         raise AssertionError("Trying to record SMART-record for non-SMART service")
@@ -356,7 +368,8 @@ def record_and_check_smart(service, timestamp, smart):
                         power_cycles=health_info["power_cycles"],
                         power_on_hours=health_info["power_on_hours"],
                         available_spare=health_info.get("available_spare"),
-                        model_number=smart.get("model_name"))
+                        model_number=smart.get("model_name"),
+                        wearleveling_count=health_info.get("wearleveling_count"))
 
     db.session.add(smart_status)
     db.session.commit()
@@ -378,6 +391,10 @@ def record_and_check_smart(service, timestamp, smart):
     if smart_last.critical_warning != 0:
         return ("SMART reports disk critical => oO better do something about this", "CRITICAL")
 
+    # wearleveling < 20% (SAMSUNG only) #
+    if smart_last.wearleveling_count and smart_last.wearleveling_count <= 20:
+        return ("SMART report prefail disk (wear_level < 20%)", "CRITICAL")
+
     # temp max > X #
     if smart_last.temperature > 50:
         return ("Disk Temperatur {}".format(smart_last.temperature), "CRITICAL")
@@ -386,7 +403,8 @@ def record_and_check_smart(service, timestamp, smart):
     spare_change = smart_old.available_spare - smart_last.available_spare
 
     if smart_last.available_spare <= 25:
-        return ("SSD spare <25 ({}) YOUR DISK WILL DIE SOON".format(spare_change), "CRITICAL")
+        return ("SSD spare <25 ({}) YOUR DISK WILL DIE SOON".format(spare_change),
+                    "CRITICAL")
     elif smart_last.available_spare <= 50:
         return ("SSD spare <50 ({})".format(spare_change), "WARNING")
     elif spare_change >= 10:
@@ -395,7 +413,8 @@ def record_and_check_smart(service, timestamp, smart):
 
     # unsafe_shutdowns +1 #
     if smart_second_last.unsafe_shutdowns - smart_last.unsafe_shutdowns >= 1:
-        return ("Disk had {} unsafe shutdowns".format(smart_last.unsafe_shutdowns), "WARNING")
+        return ("Disk had {} unsafe shutdowns".format(smart_last.unsafe_shutdowns),
+                    "WARNING")
 
     return ("", "OK")
 
