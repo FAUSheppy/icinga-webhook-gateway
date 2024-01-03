@@ -1,5 +1,6 @@
 body{
     background: radial-gradient(ellipse at center, #47918a 0%, #0b3161 100%);
+    background-attachment: fixed;
     color: aliceblue !important;
 }
 
