@@ -128,6 +128,22 @@
                 } | ConvertTo-Json<br><br>
                 Invoke-RestMethod -TimeoutSec 2 -Uri "{{ flask.request.url_root.replace("http://", "https://" )}}report" -Method Post -Headers @{"Content-Type"="application/json"} -Body $SMART
             </div>
+            <!-- register task example -->
+            <h5 class="my-4">Windows (as hourly task)</h5>
+            <div class="ml-3 example">
+                $ScriptPath = Join-Path $HOME -ChildPath "smart_monitor.ps1" <br>
+                echo '$SMART = @{ <br>
+                <div class="example-indent">
+                  service = "{{ service.service }}"<br>
+                  token = "{{ service.token }}"<br>
+                  status = "N/A"<br>
+                  smart = "$(smartctl -a C: --json | Out-String)"<br>
+                </div>
+                } | ConvertTo-Json<br><br>
+                Invoke-RestMethod -TimeoutSec 2 -Uri "{{ flask.request.url_root.replace("http://", "https://" )}}report" -Method Post -Headers @{"Content-Type"="application/json"} -Body $SMART' &gt; $ScriptPath <br>
+                schtasks /create /tn SMART_Monitor /tr "powershell.exe -executionpolicy bypass -File '$ScriptPath'" /sc hourly /mo 1<br>
+            echo "Done" <br>
+            </div>
             {% else %}
             <h5 class="my-4">Python</h5>
             <div class="ml-3 example">
