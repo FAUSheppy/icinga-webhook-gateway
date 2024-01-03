@@ -412,7 +412,8 @@ def record_and_check_smart(service, timestamp, smart):
                     spare_change), "WARNING")
 
     # unsafe_shutdowns +1 #
-    if smart_second_last.unsafe_shutdowns - smart_last.unsafe_shutdowns >= 1:
+    if(smart_second_last and 
+          smart_second_last.unsafe_shutdowns - smart_last.unsafe_shutdowns >= 1):
         return ("Disk had {} unsafe shutdowns".format(smart_last.unsafe_shutdowns),
                     "WARNING")
 
