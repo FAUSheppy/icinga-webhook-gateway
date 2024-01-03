@@ -354,38 +354,39 @@ def record_and_check_smart(service, timestamp, smart):
     smart_last_query = db.session.query(SMARTStatus)
     smart_last_query = smart_last_query.filter(SMARTStatus.service==service.service)
     smart_last = smart_last_query.order_by(sqlalchemy.desc(SMARTStatus.timestamp)).first()
-    smart_second_last = smart_last_query.order_by(sqlalchemy.desc(SMARTStatus.timestamp)).offset(1).first()
+    smart_second_last = smart_last_query.order_by(sqlalchemy.desc(
+                            SMARTStatus.timestamp)).offset(1).first()
 
     # last record (max 6 months ago) #
     timestampt_minus_6m = datetime.datetime.now() - datetime.timedelta(days=180)
-    smart_old_query = smart_last_query.filter(SMARTStatus.timestamp > timestampt_minus_6m.timestamp())
+    smart_old_query = smart_last_query.filter(
+                        SMARTStatus.timestamp > timestampt_minus_6m.timestamp())
     smart_old = smart_old_query.order_by(sqlalchemy.asc(SMARTStatus.timestamp)).first()
-
-    # temp max > X #
-    if smart_last.temperature > 50:
-        return ("Disk Temperatur {}".format(smart_last.temperature), "CRITICAL")
 
     # critial != 0 #
     if smart_last.critical_warning != 0:
         return ("SMART reports disk critical => oO better do something about this", "CRITICAL")
 
+    # temp max > X #
+    if smart_last.temperature > 50:
+        return ("Disk Temperatur {}".format(smart_last.temperature), "CRITICAL")
+
+    # available_SSD spare #
+    spare_change = smart_old.available_spare - smart_last.available_spare
+
+    if smart_last.available_spare <= 25:
+        return ("SSD spare <25 ({}) YOUR DISK WILL DIE SOON".format(spare_change), "CRITICAL")
+    elif smart_last.available_spare <= 50:
+        return ("SSD spare <50 ({})".format(spare_change), "WARNING")
+    elif spare_change >= 10:
+        return ("Strong degration in SSD spare space ({} in under 6 months)".format(
+                    spare_change), "WARNING")
+
     # unsafe_shutdowns +1 #
     if smart_second_last.unsafe_shutdowns - smart_last.unsafe_shutdowns >= 1:
-        return ("Disk had {} unsafe shutdown".format(smart_last.unsafe_shutdowns), "WARNING")
+        return ("Disk had {} unsafe shutdowns".format(smart_last.unsafe_shutdowns), "WARNING")
 
-    # available_spare -10 pro 6months #
-    spare = smart_old.available_spare - smart_last.available_spare
-    if spare >= 10:
-        return ("Strong degration in SSD spare space ({} in under 6 months)".format(
-                    spare_change, "WARNING"))
-
-    # available_spare #
-    if smart_last.available_spare < 50:
-        return ("SSD spare <50 ({})".format(spare_change, "WARNING"))
-    elif smart_last.available_spare < 25:
-        return ("SSD spare <25 ({}) YOUR DISK WILL DIE SOON".format(spare_change, "CRITIAL"))
-
-    return ("OK", "")
+    return ("", "OK")
 
 
 def create_app():
