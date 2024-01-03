@@ -48,4 +48,7 @@ def normalize(smart):
 
                 ret[target_name] = value
 
+        if ret["critical_warning"] == 0 and "smart_status" in smart:
+            ret["critical_warning"] = int(not smart["smart_status"]["passed"])
+
     return ret
