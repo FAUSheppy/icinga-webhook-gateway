@@ -396,7 +396,7 @@ def record_and_check_smart(service, timestamp, smart):
         return ("SMART report prefail disk (wear_level < 20%)", "CRITICAL")
 
     # temp max > X #
-    if smart_last.temperature > 50:
+    if smart_last.temperature > 60:
         return ("Disk Temperatur {}".format(smart_last.temperature), "CRITICAL")
 
     # available_SSD spare #
