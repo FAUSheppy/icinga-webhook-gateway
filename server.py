@@ -29,7 +29,7 @@ import smarttools
 app = flask.Flask("Icinga Report In Gateway")
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.sqlite'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI') or 'sqlite:///database.sqlite'
 app.config['JSON_CONFIG_FILE'] = 'services.json'
 app.config['JSON_CONFIG_DIR'] = 'config'
 db = SQLAlchemy(app)
