@@ -65,12 +65,12 @@ class SMARTStatus(db.Model):
 
     service     = Column(String, primary_key=True)
     timestamp   = Column(Integer, primary_key=True)
+    model_number = Column(String, primary_key=True)
     power_cycles = Column(Integer)
     temperature = Column(Integer)
     available_spare  = Column(Integer)
     unsafe_shutdowns  = Column(Integer)
     critical_warning = Column(Integer)
-    model_number = Column(String)
     power_cycles = Column(Integer)
     power_on_hours = Column(Integer)
     wearleveling_count = Column(Integer)
