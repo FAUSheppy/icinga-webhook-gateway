@@ -342,7 +342,7 @@ def default():
                 text, status = record_and_check_smart(verifiedServiceObj,
                                                         timestamp, smart)
 
-            status = Status(service=service, timestamp=timestamp, status=status, 
+            status = Status(service=service, timestamp=timestamp, status=status,
                                 info_text=text)
             db.session.merge(status)
             db.session.commit()
@@ -412,7 +412,7 @@ def record_and_check_smart(service, timestamp, smart):
                     spare_change), "WARNING")
 
     # unsafe_shutdowns +1 #
-    if(smart_second_last and 
+    if(smart_second_last and
           smart_second_last.unsafe_shutdowns - smart_last.unsafe_shutdowns >= 1):
         return ("Disk had {} unsafe shutdowns".format(smart_last.unsafe_shutdowns),
                     "WARNING")
