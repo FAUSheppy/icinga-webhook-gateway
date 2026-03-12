@@ -162,7 +162,7 @@ def create_entry(form, user):
 @app.route("/service-details")
 def service_details():
 
-    user = str(flask.request.headers.get(app.config['AUTH_HEADER']))
+    user = flask.request.headers.get(app.config['AUTH_HEADER'])
     service = flask.request.args.get("service")
 
     # query service #
@@ -190,7 +190,7 @@ def service_details():
 @app.route("/entry-form", methods=["GET", "POST", "DELETE"])
 def create_interface():
 
-    user = str(flask.request.headers.get(app.config['AUTH_HEADER']))
+    user = flask.request.headers.get(app.config['AUTH_HEADER'])
 
     # check if is delete #
     operation = flask.request.args.get("operation")
@@ -484,6 +484,8 @@ def create_app():
         print("ICINGA_API_URL not defined. Not connecting Icinga", file=sys.stderr)
     else:
         icingatools.create_master_host(app)
+
+    print(f"Expected AUTH_HEADER is: {app.config['AUTH_HEADER']}")
 
 
 if __name__ == "__main__":
