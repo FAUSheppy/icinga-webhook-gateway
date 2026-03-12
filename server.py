@@ -32,6 +32,7 @@ app = flask.Flask("Icinga Report In Gateway")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI') or 'sqlite:///database.sqlite'
 app.config['JSON_CONFIG_FILE'] = 'services.json'
 app.config['JSON_CONFIG_DIR'] = 'config'
+app.config['AUTH_HEADER'] = os.environ.get("AUTH_HEADER") or "X-Forwarded-Preferred-Username"
 db = SQLAlchemy(app)
 
 class Service(db.Model):
@@ -91,7 +92,7 @@ def buildReponseDict(status, service=None):
 @app.route('/overview')
 def overview():
 
-    user = str(flask.request.headers.get("X-Forwarded-Preferred-Username"))
+    user = str(flask.request.headers.get(app.config['AUTH_HEADER']))
 
     # query all services #
     services = db.session.query(Service).filter(Service.owner == user).all()
@@ -161,7 +162,7 @@ def create_entry(form, user):
 @app.route("/service-details")
 def service_details():
 
-    user = str(flask.request.headers.get("X-Forwarded-Preferred-Username"))
+        user = str(flask.request.headers.get(app.config['AUTH_HEADER']))
     service = flask.request.args.get("service")
 
     # query service #
@@ -189,7 +190,7 @@ def service_details():
 @app.route("/entry-form", methods=["GET", "POST", "DELETE"])
 def create_interface():
 
-    user = str(flask.request.headers.get("X-Forwarded-Preferred-Username"))
+    user = str(flask.request.headers.get(app.config['AUTH_HEADER']))
 
     # check if is delete #
     operation = flask.request.args.get("operation")
