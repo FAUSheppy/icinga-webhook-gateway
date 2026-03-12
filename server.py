@@ -162,7 +162,7 @@ def create_entry(form, user):
 @app.route("/service-details")
 def service_details():
 
-        user = str(flask.request.headers.get(app.config['AUTH_HEADER']))
+    user = str(flask.request.headers.get(app.config['AUTH_HEADER']))
     service = flask.request.args.get("service")
 
     # query service #
