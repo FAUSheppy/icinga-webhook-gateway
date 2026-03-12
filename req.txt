@@ -5,3 +5,4 @@ flask-wtf
 waitress
 requests
 icinga2api
+psycopg2-binary
