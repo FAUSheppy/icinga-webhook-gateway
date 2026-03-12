@@ -467,7 +467,7 @@ def create_app():
     ]
 
     enforce_load_from_env = os.environ.get("ENFORCE_LOAD_FROM_ENV") or ""
-    missing = [k for k in required_keys if k not in os.environ]
+    missing = [k for k in LOAD_FROM_ENV if k not in os.environ]
     if missing and enforce_load_from_env.lower() == "true":
         print(f"ENFORCE_LOAD_FROM_ENV is 'true' but we are missing: {missing} - Abort.")
         sys.exit(1)
