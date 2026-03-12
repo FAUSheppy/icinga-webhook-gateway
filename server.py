@@ -448,8 +448,7 @@ def create_app():
                     config |= json.load(f)
 
     if not config:
-        print("No valid configuration found - need at least one service")
-        return
+        print("No static services configuration found - loading finished.")
 
     for key in config:
         timeout = timeparse.timeparse(config[key]["timeout"])
@@ -458,6 +457,26 @@ def create_app():
                                     staticly_configured=staticly_configured, timeout=timeout,
                                     owner=config[key]["owner"]))
         db.session.commit()
+
+    LOAD_FROM_ENV = [
+        "ICINGA_API_USER",
+        "ICINGA_API_PASS",
+        "ICINGA_API_URL",
+        "ICINGA_WEB_URL",
+        "ASYNC_ICINGA_DUMMY_HOST"
+    ]
+
+    enforce_load_from_env = os.environ.get("ENFORCE_LOAD_FROM_ENV") or ""
+    missing = [k for k in required_keys if k not in os.environ]
+    if missing and enforce_load_from_env.lower() == "true":
+        print(f"ENFORCE_LOAD_FROM_ENV is 'true' but we are missing: {missing} - Abort."
+        sys.exit(1)
+
+    for key in LOAD_FROM_ENV:
+        if key in os.environ:
+            print(f"Loading/Overwriting {key} from environment", file=sys.stderr)
+            app.config[key] = os.environ[key]
+
 
     # create icinga host #
     if not app.config.get("ICINGA_API_URL"):
