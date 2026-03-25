@@ -9,6 +9,7 @@ import datetime
 import pytimeparse.timeparse as timeparse
 import sys
 import secrets
+import zoneinfo
 
 import flask_wtf
 from flask_wtf import FlaskForm
@@ -32,6 +33,7 @@ app = flask.Flask("Icinga Report In Gateway")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI') or 'sqlite:///database.sqlite'
 app.config['JSON_CONFIG_FILE'] = 'services.json'
 app.config['JSON_CONFIG_DIR'] = 'config'
+app.config['TIME_ZONE'] = zoneinfo.ZoneInfo(os.getenv("TIME_ZONE", "UTC"))
 app.config['AUTH_HEADER'] = os.environ.get("AUTH_HEADER") or "X-Forwarded-Preferred-Username"
 db = SQLAlchemy(app)
 
@@ -57,7 +59,7 @@ class Status(db.Model):
     info_text   = Column(String)
 
     def human_date(self):
-        dt = datetime.datetime.fromtimestamp(self.timestamp)
+        dt = datetime.datetime.fromtimestamp(self.timestamp, app.config["TIME_ZONE"])
         return dt.strftime("%d. %B %Y at %H:%M")
 
 class SMARTStatus(db.Model):
