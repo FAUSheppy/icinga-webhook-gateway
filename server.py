@@ -233,7 +233,7 @@ def create_interface():
         try:
             create_entry(form, user)
         except IntegrityError as e:
-            session.rollback()
+            db.session.rollback()
             # TODO: this only works for PG
             if isinstance(e.orig, UniqueViolation):
                 return ("A service with this name already exists (possibly by another user)", 409)
@@ -366,7 +366,7 @@ def default():
             try:
                 db.session.commit()
             except IntegrityError as e:
-                session.rollback()
+                db.session.rollback()
                 # TODO: this only works for PG
                 if isinstance(e.orig, UniqueViolation):
                     return ("Status at this time already submitted", 409)
