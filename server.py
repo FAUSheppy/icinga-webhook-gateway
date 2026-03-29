@@ -23,6 +23,8 @@ from sqlalchemy.sql import func
 import sqlalchemy
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
+from sqlalchemy.exc import IntegrityError
+from psycopg2.errors import UniqueViolation
 
 import icingatools
 import smarttools
@@ -227,9 +229,21 @@ def create_interface():
             return ("Not a valid service to modify", 404)
 
     if flask.request.method == "POST":
-        create_entry(form, user)
+
+        try:
+            create_entry(form, user)
+        except IntegrityError as e:
+            session.rollback()
+            # TODO: this only works for PG
+            if isinstance(e.orig, UniqueViolation):
+                return ("A service with this name already exists (possibly by another user)", 409)
+            else:
+                return (f"Error: {e}", 500)
+
+        # service created successfully #
         service_name = form.service.data or form.service_hidden.data
         return flask.redirect('/service-details?service={}'.format(service_name))
+
     else:
         return flask.render_template('add_modify_service.html', form=form,
                     is_modification=bool(modify_service_name))
@@ -348,7 +362,17 @@ def default():
             status = Status(service=service, timestamp=timestamp, status=status,
                                 info_text=text)
             db.session.merge(status)
-            db.session.commit()
+
+            try:
+                db.session.commit()
+            except IntegrityError as e:
+                session.rollback()
+                # TODO: this only works for PG
+                if isinstance(e.orig, UniqueViolation):
+                    return ("Status at this time already submitted", 409)
+                else:
+                    return (f"Error: {e}", 500)
+
             return ("", 204)
     else:
         return ("Method not implemented: {}".format(flask.request.method), 405)
