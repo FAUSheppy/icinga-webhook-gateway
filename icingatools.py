@@ -1,5 +1,15 @@
 import icinga2api
 import icinga2api.client
+from urllib.parse import urlparse
+
+def split_url(url):
+    parsed = urlparse(url)
+
+    http_vhost = parsed.hostname
+    http_uri = parsed.path or "/"
+    http_ssl = parsed.scheme == "https"
+
+    return http_vhost, http_uri, http_ssl
 
 def _create_client(app):
 
@@ -39,7 +49,7 @@ def _build_service_name(user, async_service_name):
     
     return "{}_async_{}".format(user, async_service_name)
 
-def create_service(user, async_service_name, app):
+def create_service(user, async_service_name, app, webcheck=False):
 
     if not app.config.get("ICINGA_API_URL"):
         return
@@ -48,20 +58,43 @@ def create_service(user, async_service_name, app):
     name = _build_service_name(user, async_service_name)
     host_name = app.config["ASYNC_ICINGA_DUMMY_HOST"]
 
-    service_config = {
-        "templates": ["generic-service"],
-        "attrs": {
-            "display_name": name,
-            "check_command": "gateway",
-            "host_name" : host_name,
-            "vars" : {
-                "host" : "async-icinga.atlantishq.de",
-                "service_name" : async_service_name,
-                "protocol" : "https",
-                "owner" : user
+    # TODO: query service from DB
+    accepted_return_codes = [200, 204]
+
+
+    if webcheck:
+        http_vhost, http_uri, http_ssl = split_url(url)
+        service_config = {
+            "templates": ["generic-service"],
+            "attrs": {
+                "display_name": name,
+                "check_command": "http",
+                "host_name": host_name,
+                "vars": {
+                    "http_vhost": http_vhost,
+                    "http_uri": http_uri,
+                    "http_expect": http_expect,
+                    "http_accept_status": accepted_return_codes, # array
+                    "http_ssl": True,
+                    "http_sni": True
+                }
             }
         }
-    }
+    else:
+        service_config = {
+            "templates": ["generic-service"],
+            "attrs": {
+                "display_name": name,
+                "check_command": "gateway",
+                "host_name" : host_name,
+                "vars" : {
+                    "host" : "async-icinga.atlantishq.de",
+                    "service_name" : async_service_name,
+                    "protocol" : "https",
+                    "owner" : user
+                }
+            }
+        }
     
     # Create the service (name is required in this format)
     service_api_helper_name = "{}!{}".format(host_name, name)
