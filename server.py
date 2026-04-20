@@ -39,6 +39,21 @@ app.config['TIME_ZONE'] = zoneinfo.ZoneInfo(os.getenv("TIME_ZONE", "UTC"))
 app.config['AUTH_HEADER'] = os.environ.get("AUTH_HEADER") or "X-Forwarded-Preferred-Username"
 db = SQLAlchemy(app)
 
+from urllib.parse import urlparse
+
+def split_url(url: str):
+    parsed = urlparse(url)
+
+    http_vhost = parsed.hostname
+    http_uri = parsed.path or "/"
+    http_ssl = parsed.scheme == "https"
+
+    return {
+        "http_vhost": http_vhost,
+        "http_uri": http_uri,
+        "http_ssl": http_ssl
+    }
+
 class Service(db.Model):
 
     __tablename__ = "services"
@@ -48,6 +63,11 @@ class Service(db.Model):
     timeout = Column(Integer)
     owner   = Column(String)
     special_type = Column(String)
+
+    # web checks #
+    url = Column(String)
+    accepted_codes = Column(String)
+    http_expect = Column(String)
 
     staticly_configured = Column(Boolean)
 
@@ -179,8 +199,28 @@ def service_details():
         return ("Services is not owned by {}".format(user))
 
     status_list_query = db.session.query(Status).filter(Status.service==service.service)
-    status_list = status_list_query.order_by(sqlalchemy.desc(Status.timestamp)).limit(20).all()
+    status_list = status_list_query.order_by(sqlalchemy.desc(Status.timestamp)).limit(200).all()
 
+    # build status tupel (repeats, status) #
+    current_tupel = None
+    prev_status = None
+    tupel_list = []
+    for s in status_list:
+
+        # set initial #
+        if not current_tupel:
+            current_tupel = [1, s]
+            tupel_list.append(current_tupel)
+            continue
+
+        if current_tupel[1].info_text == s.info_text:
+            current_tupel[0] += 1
+        else:
+            current_tupel = [1, s]
+            tupel_list.append(current_tupel)
+
+
+    print(tupel_list)
     icinga_link = icingatools.build_icinga_link_for_service(user, service.service,
                         service.staticly_configured, app)
 
@@ -188,7 +228,7 @@ def service_details():
     smart_entry = smart_entry_list.order_by(SMARTStatus.timestamp.desc()).first()
 
     return flask.render_template("service_info.html", service=service, flask=flask,
-                    user=user, status_list=status_list, icinga_link=icinga_link, smart=smart_entry)
+                    user=user, status_list=tupel_list, icinga_link=icinga_link, smart=smart_entry)
 
 
 @app.route("/entry-form", methods=["GET", "POST", "DELETE"])

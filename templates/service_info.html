@@ -56,8 +56,8 @@
 
             <div class="last-status">
             {% if status_list | length > 0 %}
-            <p class="{{ status_list[0].status }}">
-                {{ status_list[0].status }} submitted on {{ status_list[0].human_date() }}
+            <p class="{{ status_list[0][1].status }}">
+                {{ status_list[0][1].status }} submitted on {{ status_list[0][1].human_date() }}
             </p>
             {% else %}
             <p style="color: darkred;">No status for this service submitted</p>
@@ -169,12 +169,19 @@
             </thead>
 
             <tbody class="mt-2">
-                {% for status in status_list %}
+                {% for status_tupel in status_list %}
                 <tr>
-                    <td>{{ status.human_date()  }}</td>
-                    <td class="{{ status.status }}">{{ status.status }}</td>
-                    <td>{{ status.info_text     }}</td>
+                    <td>{{ status_tupel[1].human_date()  }}</td>
+                    <td class="{{ status_tupel[1].status }}">{{ status_tupel[1].status }}</td>
+                    <td>{{ status_tupel[1].info_text     }}</td>
                 </tr>
+                {% if status_tupel[0] > 1 %}
+                <tr>
+                    <td>---</td>
+                    <td><i> + {{ status_tupel[0] }} identical reports</i></td>
+                    <td>|</td>
+                </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
             </table>
