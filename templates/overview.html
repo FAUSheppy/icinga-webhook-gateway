@@ -8,7 +8,11 @@
                 <a href="/service-details?service={{ status.service}}"
                    class="col-md-5 m-3 p-2 border rounded overview-tile"
                         {% if status.status == "OK"  %}
-                            style="background-color: lightgreen;"
+                            {% if status.info_text == "Submitted from Web-Interface" %}
+                                style="background-color: #5cffe0;"
+                            {% else %}
+                                style="background-color: lightgreen;"
+                            {% endif %}
                         {% elif status.status == "WARNING"  %}
                             style="background-color: orange;"
                         {% elif status.status == "CRITICAL"  %}
