@@ -207,7 +207,7 @@ def service_details():
     ).limit(1000)
     status_list = recent_query.all()
 
-    if not recent_entries:
+    if not status_list:
         status_list = status_list_query.order_by(sqlalchemy.desc(Status.timestamp)).limit(1000).all()
 
     # build status tupel (repeats, status) #
