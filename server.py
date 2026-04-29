@@ -198,8 +198,17 @@ def service_details():
     if service.owner and str(service.owner) != user:
         return ("Services is not owned by {}".format(user))
 
-    status_list_query = db.session.query(Status).filter(Status.service==service.service)
-    status_list = status_list_query.order_by(sqlalchemy.desc(Status.timestamp)).limit(200).all()
+    two_weeks_ago_ts = int((datetime.datetime.now() - datetime.timedelta(days=14)).timestamp())
+    recent_query = (
+        status_list_query
+        .filter(Status.timestamp >= two_weeks_ago_ts, Status.service==service.service)
+        .order_by(desc(Status.timestamp))
+    ).limit(1000)
+    status_list = recent_query.all()
+
+    if not recent_entries:
+        status_list_query = db.session.query(Status).filter(Status.service==service.service)
+        status_list = status_list_query.order_by(sqlalchemy.desc(Status.timestamp)).limit(1000).all()
 
     # build status tupel (repeats, status) #
     current_tupel = None
