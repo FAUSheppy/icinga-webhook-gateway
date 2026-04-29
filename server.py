@@ -16,7 +16,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, BooleanField, DecimalField, HiddenField, SelectField
 from wtforms.validators import DataRequired, Length
 
-from sqlalchemy import Column, Integer, String, Boolean, or_, and_
+from sqlalchemy import Column, Integer, String, Boolean, or_, and_, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import func
