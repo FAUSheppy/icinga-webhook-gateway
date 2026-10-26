@@ -28,7 +28,7 @@ jobs:
           password: ${{ secrets.REGISTRY_PASS }}
       -
         name: Build and push async-icinga image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64
