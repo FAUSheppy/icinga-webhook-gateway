@@ -67,4 +67,3 @@ Icinga won't have a direct line to an actual host. You can define the remote hos
         check_command = "http"
         groups = ["gateway-host", "linux-generic"]
     }
-
