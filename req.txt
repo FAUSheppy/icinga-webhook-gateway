@@ -5,5 +5,5 @@ flask-wtf==1.2.2
 waitress==3.0.1
 requests==2.34.2
 icinga2api==0.6.1
-psycopg2-binary==2.9.11
+psycopg2-binary==2.9.13
 tzdata==2026.5
